@@ -80,13 +80,13 @@ export default function Hero() {
   };
 
   return (
-    <section className="flex flex-col lg:flex-row gap-6 md:gap-8 lg:gap-16 items-center mb-16 mt-2 md:mt-0">
+    <section className="flex flex-col lg:flex-row gap-6 md:gap-8 lg:gap-16 items-center mb-16 mt-2 md:mt-0 font-sans">
       <div className="flex-1 flex flex-col gap-4 w-full">
-        <h1 className="text-[26px] leading-[1.25] md:text-5xl lg:text-[54px] font-bold md:leading-[1.1] tracking-tight text-[#1E293B]">
+        <h1 className="text-[32px] leading-[1.2] md:text-[48px] lg:text-[54px] font-serif font-bold md:leading-[1.1] tracking-tight text-text-heading drop-shadow-sm">
           Rencanakan perjalanan
           <br className="hidden md:block" /> terbaikmu di Indonesia
         </h1>
-        <p className="text-gray-600 text-[15px] md:text-xl max-w-lg leading-relaxed">
+        <p className="text-text-body text-[15px] md:text-base font-medium max-w-lg leading-relaxed">
           Temukan ide, susun itinerary, dan bagikan perjalananmu dengan
           komunitas.
         </p>
@@ -94,37 +94,37 @@ export default function Hero() {
         <div className="flex gap-2.5 mt-2 md:mt-4">
           <div className="relative flex-1">
             <MapPin
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted"
               size={20}
             />
             <input
               type="text"
               placeholder="Cari kota, provinsi, atau daerah tujuan"
-              className="w-full pl-10 pr-4 py-3 md:py-4 bg-white border border-[#E2E8F0] rounded-xl shadow-md focus:outline-none focus:ring-1 focus:ring-[#1D4ED8] text-[13px] md:text-lg transition-shadow"
+              className="w-full pl-11 pr-4 py-3.5 bg-bg-surface border border-border-default rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-border-focus text-sm md:text-base font-medium transition-shadow"
             />
           </div>
-          <button className="bg-[#2563EB] text-white px-4 rounded-xl hover:bg-[#1D4ED8] transition-colors flex items-center justify-center shrink-0">
-            <Search />
+          <button className="bg-brand-primary text-text-light px-5 rounded-md hover:bg-brand-primary-hover transition-colors flex items-center justify-center shrink-0 shadow-sm">
+            <Search size={22} />
           </button>
         </div>
 
         <div className="hidden md:flex flex-wrap items-center gap-3 text-sm mt-3">
-          <span className="text-gray-600 font-medium">Jelajahi populer:</span>
+          <span className="text-text-body font-semibold">Jelajahi populer:</span>
           {["Bandung", "Yogyakarta", "Bali", "Malang", "Lombok"].map((city) => (
             <button
               key={city}
-              className="bg-gray-100 text-gray-700 px-4 py-1.5 rounded-full hover:bg-gray-200 transition-colors font-medium"
+              className="bg-bg-hover text-text-body px-4 py-1.5 rounded-full border border-border-default hover:border-border-strong hover:bg-border-default transition-colors font-medium text-[13px]"
             >
               {city}
             </button>
           ))}
-          <button className="text-[#2563EB] font-semibold hover:underline ml-1">
+          <button className="text-brand-primary font-semibold hover:underline ml-1 text-[13px]">
             Lihat semua →
           </button>
         </div>
       </div>
 
-      <div className="flex-1 w-full lg:w-auto relative mt-2 md:mt-0">
+      <div className="flex-1 w-full lg:w-auto relative mt-4 md:mt-0">
         <div
           ref={scrollRef}
           onScroll={handleScroll}
@@ -132,7 +132,7 @@ export default function Hero() {
           onMouseLeave={handleMouseLeave}
           onMouseUp={handleMouseUp}
           onMouseMove={handleMouseMove}
-          className={`flex overflow-x-auto hide-scrollbar rounded-[20px] md:rounded-3xl shadow-lg ${
+          className={`flex overflow-x-auto hide-scrollbar rounded-lg shadow-md ${
             isDragging
               ? "cursor-grabbing"
               : "snap-x snap-mandatory scroll-smooth cursor-grab"
@@ -142,32 +142,32 @@ export default function Hero() {
           {slides.map((slide, i) => (
             <div
               key={i}
-              className="relative min-w-full aspect-[16/10] md:aspect-video lg:aspect-[4/3] snap-center group select-none"
+              className="relative min-w-full aspect-[16/10] md:aspect-video lg:aspect-[4/3] snap-center group select-none overflow-hidden rounded-lg"
             >
               <img
                 src={slide.img}
                 alt={slide.title}
                 draggable={false}
                 onDragStart={(e) => e.preventDefault()}
-                className="w-full h-full object-cover pointer-events-none"
+                className="w-full h-full object-cover pointer-events-none transition-transform duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-5 md:p-8 pointer-events-none">
-                <h3 className="text-white text-[15px] md:text-3xl font-bold tracking-wide leading-tight">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6 md:p-8 pointer-events-none">
+                <h3 className="text-text-light text-lg md:text-[28px] font-serif font-bold tracking-wide leading-tight drop-shadow-md mb-1.5">
                   {slide.title}
                 </h3>
-                <p className="text-white/90 text-[11px] md:text-base mt-1 md:mt-2 font-medium">
+                <p className="text-text-light/90 text-[13px] md:text-sm font-medium drop-shadow-sm">
                   {slide.desc}
                 </p>
               </div>
             </div>
           ))}
         </div>
-        <div className="flex justify-center gap-2 mt-4 md:mt-6">
+        <div className="flex justify-center gap-2.5 mt-5 md:mt-6">
           {slides.map((_, i) => (
             <button
               key={i}
               onClick={() => scrollToSlide(i)}
-              className={`w-2.5 h-2.5 rounded-full transition-colors ${activeIndex === i ? "bg-[#2563EB]" : "bg-gray-200 hover:bg-gray-300"}`}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${activeIndex === i ? "bg-brand-primary w-6" : "bg-border-strong hover:bg-border-focus"}`}
               aria-label={`Go to slide ${i + 1}`}
             />
           ))}

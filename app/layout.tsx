@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
-import { Roboto_Slab } from "next/font/google";
+import { Plus_Jakarta_Sans, DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 
-const robotoSlab = Roboto_Slab({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-roboto-slab",
+  variable: "--font-plus-jakarta",
+});
+
+const dmSerif = DM_Serif_Display({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-dm-serif",
 });
 
 export const metadata: Metadata = {
@@ -18,8 +24,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${robotoSlab.className} min-h-screen flex flex-col antialiased bg-gray-50 text-gray-900`}>
+    <html lang="id">
+      <body className={`${plusJakarta.variable} ${dmSerif.variable} min-h-screen flex flex-col antialiased bg-bg-main text-text-body font-sans`}>
         {children}
       </body>
     </html>
