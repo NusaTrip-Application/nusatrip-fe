@@ -1,47 +1,29 @@
 import React from "react";
-import { ArrowRight, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 export default function PopularDestinations() {
   return (
     <section className="mb-20">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl md:text-3xl font-bold">Destinasi Populer</h2>
-        <button className="text-[#2563EB] font-semibold flex items-center gap-1.5 hover:underline text-sm md:text-base">
+        <h2 className="text-[32px] font-bold leading-[1.3] -tracking-[0.01em] text-text-heading">
+          Destinasi Populer
+        </h2>
+        <button className="text-brand-primary font-semibold flex items-center gap-1.5 hover:underline text-sm md:text-base">
           Lihat semua →
         </button>
       </div>
 
       <div className="flex overflow-x-auto gap-5 pb-4 snap-x hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
         {[
-          {
-            name: "Bandung",
-            province: "Jawa Barat",
-            img: "https://images.unsplash.com/photo-1584824486516-0555a07fc511?w=500&auto=format&fit=crop&q=60",
-          },
-          {
-            name: "Yogyakarta",
-            province: "DI Yogyakarta",
-            img: "https://images.unsplash.com/photo-1584824486516-0555a07fc511?w=500&auto=format&fit=crop&q=60",
-          },
-          {
-            name: "Bali",
-            province: "Bali",
-            img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=500&auto=format&fit=crop&q=60",
-          },
-          {
-            name: "Malang",
-            province: "Jawa Timur",
-            img: "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=500&auto=format&fit=crop&q=60",
-          },
-          {
-            name: "Jakarta",
-            province: "DKI Jakarta",
-            img: "https://images.unsplash.com/photo-1555899434-94d1368aa7af?w=500&auto=format&fit=crop&q=60",
-          },
+          { name: "Bandung", province: "Jawa Barat", img: "https://images.unsplash.com/photo-1584824486516-0555a07fc511?w=500&auto=format&fit=crop&q=60" },
+          { name: "Yogyakarta", province: "DI Yogyakarta", img: "https://images.unsplash.com/photo-1584824486516-0555a07fc511?w=500&auto=format&fit=crop&q=60" },
+          { name: "Bali", province: "Bali", img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=500&auto=format&fit=crop&q=60" },
+          { name: "Malang", province: "Jawa Timur", img: "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=500&auto=format&fit=crop&q=60" },
+          { name: "Jakarta", province: "DKI Jakarta", img: "https://images.unsplash.com/photo-1555899434-94d1368aa7af?w=500&auto=format&fit=crop&q=60" },
         ].map((dest, i) => (
           <div
             key={i}
-            className="min-w-[220px] md:min-w-[260px] flex-none snap-start bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
+            className="min-w-[220px] md:min-w-[260px] flex-none snap-start bg-bg-surface rounded-lg overflow-hidden border border-border-default shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
           >
             <div className="overflow-hidden">
               <img
@@ -51,9 +33,9 @@ export default function PopularDestinations() {
               />
             </div>
             <div className="p-5">
-              <h3 className="font-bold text-xl mb-1">{dest.name}</h3>
-              <p className="text-gray-500 text-sm flex items-center gap-1.5 font-medium">
-                <MapPin size={16} /> {dest.province}
+              <h3 className="text-[20px] font-semibold leading-[1.4] -tracking-[0.01em] text-text-heading mb-1">{dest.name}</h3>
+              <p className="text-[14px] font-medium leading-[1.5] text-text-body flex items-center gap-1.5">
+                <MapPin size={16} className="text-text-muted" /> {dest.province}
               </p>
             </div>
           </div>
