@@ -1,4 +1,3 @@
-import React from "react";
 import { MapPin, Search, Bell, Menu } from "lucide-react";
 
 export default function Header() {
@@ -9,7 +8,7 @@ export default function Header() {
           <Menu size={24} />
         </button>
         <div className="flex items-center gap-1.5 md:gap-2">
-          <MapPin className="text-[#0D7C4A] md:w-7 md:h-7" size={24} />
+          <MapPin className="text-[#434655] md:w-7 md:h-7" size={24} />
           <span className="text-lg md:text-2xl font-bold">NusaTrip</span>
         </div>
       </div>
@@ -17,17 +16,17 @@ export default function Header() {
       <nav className="hidden lg:flex items-center gap-8 font-medium text-gray-600">
         <a
           href="#"
-          className="text-[#0D7C4A] border-b-2 border-[#0D7C4A] pb-1 font-bold"
+          className="text-[#2563EB] border-b-2 border-[#3B82F6] pb-1 font-bold"
         >
           Home
         </a>
-        <a href="#" className="hover:text-[#0D7C4A] transition-colors">
+        <a href="#" className="hover:text-[#1D4ED8] transition-colors">
           My Plans
         </a>
-        <a href="#" className="hover:text-[#0D7C4A] transition-colors">
+        <a href="#" className="hover:text-[#1D4ED8] transition-colors">
           Community
         </a>
-        <a href="#" className="hover:text-[#0D7C4A] transition-colors">
+        <a href="#" className="hover:text-[#1D4ED8] transition-colors">
           Profile
         </a>
       </nav>
@@ -41,11 +40,8 @@ export default function Header() {
           <input
             type="text"
             placeholder="Cari location (kota, provinsi, atau daerah)..."
-            className="pl-10 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#0D7C4A] w-72 xl:w-96 transition-shadow"
+            className="pl-10 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#1D4ED8] w-72 xl:w-96 transition-shadow"
           />
-          <button className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[#0D7C4A] text-white p-1.5 rounded-md hover:bg-[#0a663d] transition-colors">
-            <Search size={16} />
-          </button>
         </div>
       </div>
 

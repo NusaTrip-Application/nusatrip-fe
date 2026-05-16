@@ -100,11 +100,11 @@ export default function Hero() {
             <input
               type="text"
               placeholder="Cari kota, provinsi, atau daerah tujuan"
-              className="w-full pl-10 pr-4 py-3 md:py-4 bg-white border border-[#E2E8F0] rounded-xl shadow-sm focus:outline-none focus:ring-1 focus:ring-[#0D7C4A] text-[13px] md:text-lg transition-shadow"
+              className="w-full pl-10 pr-4 py-3 md:py-4 bg-white border border-[#E2E8F0] rounded-xl shadow-md focus:outline-none focus:ring-1 focus:ring-[#1D4ED8] text-[13px] md:text-lg transition-shadow"
             />
           </div>
-          <button className="bg-[#0D7C4A] text-white px-4 py-3 md:py-4 rounded-xl hover:bg-[#0a663d] transition-colors flex items-center justify-center shrink-0">
-            <Search size={20} />
+          <button className="bg-[#2563EB] text-white px-4 rounded-xl hover:bg-[#1D4ED8] transition-colors flex items-center justify-center shrink-0">
+            <Search />
           </button>
         </div>
 
@@ -118,8 +118,8 @@ export default function Hero() {
               {city}
             </button>
           ))}
-          <button className="text-[#0D7C4A] font-semibold hover:underline ml-1">
-            Lihat semua
+          <button className="text-[#2563EB] font-semibold hover:underline ml-1">
+            Lihat semua →
           </button>
         </div>
       </div>
@@ -167,7 +167,7 @@ export default function Hero() {
             <button
               key={i}
               onClick={() => scrollToSlide(i)}
-              className={`w-2.5 h-2.5 rounded-full transition-colors ${activeIndex === i ? "bg-[#0D7C4A]" : "bg-gray-200 hover:bg-gray-300"}`}
+              className={`w-2.5 h-2.5 rounded-full transition-colors ${activeIndex === i ? "bg-[#2563EB]" : "bg-gray-200 hover:bg-gray-300"}`}
               aria-label={`Go to slide ${i + 1}`}
             />
           ))}

@@ -9,7 +9,7 @@ import MobileNav from "@/components/MobileNav";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col pb-20 md:pb-0 relative bg-white">
+    <div className="min-h-screen flex flex-col pb-20 md:pb-0 relative bg-[#F8FAFC]">
       <Header />
 
       <main className="flex-grow flex flex-col items-center">

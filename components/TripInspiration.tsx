@@ -7,8 +7,8 @@ export default function TripInspiration() {
         <h2 className="text-2xl md:text-3xl font-bold">
           Inspirasi Trip dari Komunitas
         </h2>
-        <button className="text-[#0D7C4A] font-semibold flex items-center gap-1.5 hover:underline text-sm md:text-base">
-          Lihat semua <ArrowRight size={18} />
+        <button className="text-[#2563EB] font-semibold flex items-center gap-1.5 hover:underline text-sm md:text-base">
+          Lihat semua →
         </button>
       </div>
 
