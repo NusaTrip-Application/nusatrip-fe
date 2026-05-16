@@ -1,9 +1,9 @@
 import React from "react";
 import Header from "@/components/Header";
-import Hero from "@/components/Hero";
-import PopularDestinations from "@/components/PopularDestinations";
-import TripInspiration from "@/components/TripInspiration";
-import Features from "@/components/Features";
+import Hero from "@/features/home/Hero";
+import PopularDestinations from "@/features/home/PopularDestinations";
+import TripInspiration from "@/features/home/TripInspiration";
+import Features from "@/features/home/Features";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
 
