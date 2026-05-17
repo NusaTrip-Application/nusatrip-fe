@@ -1,7 +1,12 @@
+"use client";
+
 import { MapPin, Search, Bell, Menu } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
+  const pathname = usePathname();
+
   return (
     <header className="flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-bg-surface border-b border-border-default sticky top-0 z-50">
       <div className="flex items-center gap-3">
@@ -17,17 +22,42 @@ export default function Header() {
       <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold text-text-body">
         <Link
           href="/"
-          className="text-brand-primary border-b-2 border-brand-primary pb-1"
+          className={`pb-1 transition-colors ${
+            pathname === "/" 
+              ? "text-brand-primary border-b-2 border-brand-primary" 
+              : "hover:text-brand-primary-hover"
+          }`}
         >
           Home
         </Link>
-        <Link href="/my-plans" className="hover:text-brand-primary-hover transition-colors">
+        <Link 
+          href="/my-plans" 
+          className={`pb-1 transition-colors ${
+            pathname === "/my-plans" 
+              ? "text-brand-primary border-b-2 border-brand-primary" 
+              : "hover:text-brand-primary-hover"
+          }`}
+        >
           My Plans
         </Link>
-        <Link href="/community" className="hover:text-brand-primary-hover transition-colors">
+        <Link 
+          href="/community" 
+          className={`pb-1 transition-colors ${
+            pathname === "/community" 
+              ? "text-brand-primary border-b-2 border-brand-primary" 
+              : "hover:text-brand-primary-hover"
+          }`}
+        >
           Community
         </Link>
-        <Link href="/profile" className="hover:text-brand-primary-hover transition-colors">
+        <Link 
+          href="/profile" 
+          className={`pb-1 transition-colors ${
+            pathname === "/profile" 
+              ? "text-brand-primary border-b-2 border-brand-primary" 
+              : "hover:text-brand-primary-hover"
+          }`}
+        >
           Profile
         </Link>
       </nav>
