@@ -47,7 +47,7 @@ export default function CreatePlanForm() {
   const onSubmit = (data: PlanFormValues) => {
     console.log("Data Trip Valid:", data);
     alert("Setup Rencana Perjalanan berhasil!");
-    // TODO: Arahkan ke halaman detail trip
+    router.push(`/my-plans/recommendation?destination=${data.destination}&start=${data.startDate}&end=${data.endDate}`);
   };
 
   return (
