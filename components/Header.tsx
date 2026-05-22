@@ -1,8 +1,42 @@
 "use client";
 
-import { MapPin, Search, Bell, Menu } from "lucide-react";
+import { MapPin, Search, Bell, Menu, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+
+function HeaderSearchInput() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const query = searchParams ? searchParams.get("q") || "" : "";
+  const [inputValue, setInputValue] = useState("");
+
+  useEffect(() => {
+    setInputValue(query.toLowerCase() === "semua" ? "" : query);
+  }, [query]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = inputValue.trim() ? inputValue.trim() : "Semua";
+    router.push(`/search?q=${encodeURIComponent(query)}`);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="relative group">
+      <Search
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted group-hover:text-text-body transition-colors"
+        size={18}
+      />
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        placeholder="Cari lokasi (kota)..."
+        className="pl-10 pr-12 py-2 bg-[#F3F3FE] border border-border-default rounded-md text-sm font-medium focus:outline-none focus:ring-1 focus:ring-border-focus w-72 xl:w-96 transition-shadow"
+      />
+    </form>
+  );
+}
 
 export default function Header() {
   const pathname = usePathname();
@@ -14,7 +48,7 @@ export default function Header() {
           <Menu size={24} />
         </button>
         <Link href="/" className="flex items-center gap-1.5 md:gap-2">
-          <MapPin className="text-text-body md:w-7 md:h-7" size={24} />
+          <MapPin className="text-brand-primary md:w-7 md:h-7" size={24} />
           <span className="text-lg md:text-2xl font-bold text-text-heading tracking-tight">NusaTrip</span>
         </Link>
       </div>
@@ -63,32 +97,37 @@ export default function Header() {
       </nav>
 
       <div className="hidden lg:flex items-center gap-4">
-        <div className="relative group">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted group-hover:text-text-body transition-colors"
-            size={18}
-          />
-          <input
-            type="text"
-            placeholder="Cari location (kota, provinsi, atau daerah)..."
-            className="pl-10 pr-12 py-2.5 bg-bg-main border border-border-default rounded-md text-sm font-medium focus:outline-none focus:ring-1 focus:ring-border-focus w-72 xl:w-96 transition-shadow"
-          />
-        </div>
+        <Suspense fallback={
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+            <input
+              type="text"
+              placeholder="Cari lokasi (kota)..."
+              className="pl-10 pr-12 py-2 bg-[#F3F3FE] border border-border-default rounded-md text-sm font-medium w-72 xl:w-96"
+              disabled
+            />
+          </div>
+        }>
+          <HeaderSearchInput />
+        </Suspense>
       </div>
 
       <div className="flex items-center gap-3 md:gap-4">
         <button className="text-text-body hover:text-brand-primary transition-colors">
           <Bell size={20} className="md:w-5 md:h-5" />
         </button>
-        <div className="flex items-center gap-2 md:gap-3 cursor-pointer">
+        <div className="flex items-center gap-2 md:gap-3 cursor-pointer group">
           <img
-            src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=500&auto=format&fit=crop&q=60"
-            alt="User"
-            className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-sm"
+            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+            alt="Andi Wijaya"
+            className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-sm ring-1 ring-border-default"
           />
-          <span className="hidden lg:block text-sm font-semibold text-text-heading">
-            Derry Warido
-          </span>
+          <div className="hidden lg:flex items-center gap-1">
+            <span className="text-sm font-semibold text-text-heading group-hover:text-brand-primary transition-colors">
+              Andi Wijaya
+            </span>
+            <ChevronDown size={14} className="text-text-muted group-hover:text-text-heading transition-colors" />
+          </div>
         </div>
       </div>
     </header>
