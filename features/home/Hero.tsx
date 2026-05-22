@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { MapPin, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const slides = [
   {
@@ -27,11 +28,25 @@ const slides = [
 ];
 
 export default function Hero() {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const query = searchQuery.trim() ? searchQuery.trim() : "Semua";
+    router.push(`/search?q=${encodeURIComponent(query)}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearchSubmit();
+    }
+  };
 
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -91,7 +106,7 @@ export default function Hero() {
           komunitas.
         </p>
 
-        <div className="flex gap-2.5 mt-2 md:mt-4">
+        <form onSubmit={handleSearchSubmit} className="flex gap-2.5 mt-2 md:mt-4">
           <div className="relative flex-1">
             <MapPin
               className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted"
@@ -100,25 +115,32 @@ export default function Hero() {
             <input
               type="text"
               placeholder="Cari kota, provinsi, atau daerah tujuan"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               className="w-full pl-11 pr-4 py-3.5 bg-bg-surface border border-border-default rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-border-focus text-sm md:text-base font-medium transition-shadow"
             />
           </div>
-          <button className="bg-brand-primary text-text-light px-5 rounded-md hover:bg-brand-primary-hover transition-colors flex items-center justify-center shrink-0 shadow-sm">
+          <button type="submit" className="bg-brand-primary text-text-light px-5 rounded-md hover:bg-brand-primary-hover transition-colors flex items-center justify-center shrink-0 shadow-sm cursor-pointer">
             <Search size={22} />
           </button>
-        </div>
+        </form>
 
         <div className="hidden md:flex flex-wrap items-center gap-3 text-sm mt-3">
           <span className="text-text-body font-semibold">Jelajahi populer:</span>
           {["Bandung", "Yogyakarta", "Bali", "Malang", "Lombok"].map((city) => (
             <button
               key={city}
-              className="bg-bg-hover text-text-body px-4 py-1.5 rounded-full border border-border-default hover:border-border-strong hover:bg-border-default transition-colors font-medium text-[13px]"
+              onClick={() => router.push(`/search?q=${encodeURIComponent(city)}`)}
+              className="bg-bg-hover text-text-body px-4 py-1.5 rounded-full border border-border-default hover:border-border-strong hover:bg-border-default transition-colors font-medium text-[13px] cursor-pointer"
             >
               {city}
             </button>
           ))}
-          <button className="text-brand-primary font-semibold hover:underline ml-1 text-[13px]">
+          <button 
+            onClick={() => router.push(`/search`)}
+            className="text-brand-primary font-semibold hover:underline ml-1 text-[13px] cursor-pointer"
+          >
             Lihat semua →
           </button>
         </div>

@@ -1,61 +1,132 @@
-import { Star, Eye, Bookmark } from "lucide-react";
+"use client";
+
+import { Star, Bookmark, Calendar, Wallet } from "lucide-react";
 
 export default function TripInspiration() {
+  const trips = [
+    {
+      title: "5 Hari 4 Malam di Bandung",
+      loc: "Bandung, Jawa Barat",
+      img: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80",
+      author: "Budi Santoso",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+      duration: "5 Hari",
+      budget: "Rp 3.000.000",
+      rating: "4.8",
+      reviewCount: "120",
+      saves: "2.3K saved"
+    },
+    {
+      title: "5 Hari 4 Malam di Bandung",
+      loc: "Bandung, Jawa Barat",
+      img: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80",
+      author: "Budi Santoso",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+      duration: "5 Hari",
+      budget: "Rp 3.000.000",
+      rating: "4.8",
+      reviewCount: "120",
+      saves: "2.3K saved"
+    },
+    {
+      title: "5 Hari 4 Malam di Bandung",
+      loc: "Bandung, Jawa Barat",
+      img: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80",
+      author: "Budi Santoso",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+      duration: "5 Hari",
+      budget: "Rp 3.000.000",
+      rating: "4.8",
+      reviewCount: "120",
+      saves: "2.3K saved"
+    }
+  ];
+
   return (
-    <section className="mb-20">
+    <section className="mb-20 font-sans">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-[32px] font-bold leading-[1.3] -tracking-[0.01em] text-text-heading">
+        <h2 className="text-[28px] md:text-[32px] font-serif font-bold text-text-heading tracking-tight leading-snug">
           Inspirasi Trip dari Komunitas
         </h2>
-        <button className="text-brand-primary font-semibold flex items-center gap-1.5 hover:underline text-sm md:text-base">
+        <button className="text-brand-primary font-bold flex items-center gap-1.5 hover:text-brand-primary-hover hover:underline text-sm md:text-base cursor-pointer">
           Lihat semua →
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {[
-          { title: "5 Hari 4 Malam di Bandung", loc: "Bandung, Jawa Barat", img: "https://images.unsplash.com/photo-1584824486516-0555a07fc511?w=400&auto=format&fit=crop&q=60", author: "Sarah Wijaya", rating: "4.8", review: "120", saved: "2.3K" },
-          { title: "Weekend Seru di Yogyakarta", loc: "Yogyakarta, DI Yogyakarta", img: "https://images.unsplash.com/photo-1584824486516-0555a07fc511?w=400&auto=format&fit=crop&q=60", author: "Dika Pratama", rating: "4.6", review: "85", saved: "1.6K" },
-          { title: "Bali 4 Hari 3 Malam", loc: "Bali", img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&auto=format&fit=crop&q=60", author: "Mega Lestari", rating: "4.9", review: "90", saved: "3.1K" },
-          { title: "Lombok 3 Hari 2 Malam", loc: "Lombok, NTB", img: "https://images.unsplash.com/photo-1584824486516-0555a07fc511?w=400&auto=format&fit=crop&q=60", author: "Rizky Mahendra", rating: "4.5", review: "70", saved: "3.1K" },
-        ].map((trip, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {trips.map((trip, i) => (
           <div
             key={i}
-            className="bg-bg-surface rounded-lg border border-border-default shadow-sm hover:shadow-md transition-shadow"
+            className="bg-bg-surface rounded-2xl border border-border-default overflow-hidden shadow-sm hover:shadow-md hover:border-border-strong transition-all duration-300 flex flex-col group"
           >
-            <div className="p-4 sm:p-5 flex gap-4 sm:gap-6">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 overflow-hidden rounded-md">
-                <img src={trip.img} alt={trip.title} className="w-full h-full object-cover" />
-              </div>
-              <div className="flex flex-col justify-center py-1">
-                {/* Body Large */}
-                <h3 className="text-[16px] font-semibold leading-[1.5] text-text-heading mb-1.5">
-                  {trip.title}
-                </h3>
-                {/* Body Base */}
-                <p className="text-[14px] font-medium text-text-body mb-3 sm:mb-4">
-                  {trip.loc}
-                </p>
-                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-[12px] text-text-muted font-medium">
-                  <span className="flex items-center gap-1.5">
-                    <Star size={14} className="text-brand-warm fill-brand-warm" /> {trip.rating}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Eye size={14} /> {trip.review} review
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Bookmark size={14} /> {trip.saved} saved
-                  </span>
+            <div className="relative aspect-[16/9.5] w-full overflow-hidden shrink-0">
+              <img
+                src={trip.img}
+                alt={trip.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <button
+                className="absolute top-4 right-4 bg-white hover:bg-bg-hover rounded-full p-2.5 shadow-md flex items-center justify-center transition-colors cursor-pointer group/btn border border-border-default"
+                aria-label="Save Trip"
+              >
+                <Bookmark size={15} className="text-brand-primary fill-transparent group-hover/btn:fill-brand-primary transition-colors" />
+              </button>
+            </div>
+
+            <div className="p-5 flex flex-col flex-grow">
+              <h3 className="text-base md:text-[17px] font-bold text-text-heading mb-1 leading-snug">
+                {trip.title}
+              </h3>
+              <span className="text-[13px] font-medium text-text-body mb-4 block">
+                {trip.loc}
+              </span>
+
+              <div className="flex flex-col gap-3 mb-4">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2 text-text-body font-semibold text-[13px]">
+                    <Calendar size={15} className="text-text-muted" />
+                    <span>{trip.duration}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-text-body font-semibold text-[13px]">
+                    <Wallet size={15} className="text-text-muted" />
+                    <span>{trip.budget}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-text-heading">
+                    <Star size={15} className="text-brand-warm fill-brand-warm" />
+                    <span>{trip.rating}</span>
+                    <span className="text-text-muted font-medium">({trip.reviewCount})</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[13px] font-semibold text-text-body">
+                    <Bookmark size={15} className="text-text-muted" />
+                    <span>{trip.saves}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="border-t border-border-default p-4 sm:px-5 sm:py-4 flex items-center gap-3">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-bg-hover overflow-hidden">
-                <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt={trip.author} className="w-full h-full object-cover" />
+
+              <div className="border-t border-border-default my-3.5" />
+
+              <div className="flex items-center justify-between mt-auto">
+                <div className="flex items-center gap-2.5">
+                  <img
+                    src={trip.avatar}
+                    alt={trip.author}
+                    className="w-8.5 h-8.5 rounded-full object-cover ring-1 ring-border-default"
+                  />
+                  <span className="text-[13.5px] font-bold text-text-heading">
+                    {trip.author}
+                  </span>
+                </div>
+                <a
+                  href="#"
+                  onClick={(e) => e.preventDefault()}
+                  className="text-[13.5px] font-bold text-brand-primary hover:text-brand-primary-hover hover:underline transition-colors cursor-pointer"
+                >
+                  View Details
+                </a>
               </div>
-              <span className="text-[14px] font-semibold text-text-heading">
-                {trip.author}
-              </span>
             </div>
           </div>
         ))}
