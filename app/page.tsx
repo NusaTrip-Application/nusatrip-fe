@@ -1,4 +1,3 @@
-import React from "react";
 import Header from "@/components/Header";
 import Hero from "@/features/home/Hero";
 import PopularDestinations from "@/features/home/PopularDestinations";
