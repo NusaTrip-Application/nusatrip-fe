@@ -45,9 +45,25 @@ export default function CreatePlanForm() {
   };
 
   const onSubmit = (data: PlanFormValues) => {
-    console.log("Data Trip Valid:", data);
+    const newTripId = Date.now().toString(); 
+
+    const tripInfo = {
+      id: newTripId,
+      title: data.title || `Perjalanan ke ${data.destination}`,
+      destination: data.destination,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      pax: Number(data.travelers) || 4,
+      budget: data.budget ? Number(data.budget.toString().replace(/[^0-9]/g, "")) : 2000000
+    };
+
+    localStorage.setItem(`plan_${newTripId}`, JSON.stringify(tripInfo));
+
     alert("Setup Rencana Perjalanan berhasil!");
-    router.push(`/my-plans/recommendation?destination=${data.destination}&start=${data.startDate}&end=${data.endDate}`);
+
+    router.push(
+      `/my-plans/recommendation?destination=${data.destination}&tripId=${newTripId}&start=${data.startDate}&end=${data.endDate}`
+    );
   };
 
   return (

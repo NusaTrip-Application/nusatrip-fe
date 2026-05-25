@@ -67,7 +67,7 @@ export default function Header() {
         <Link 
           href="/my-plans" 
           className={`pb-1 transition-colors ${
-            pathname === "/my-plans" 
+            pathname.startsWith("/my-plans") 
               ? "text-brand-primary border-b-2 border-brand-primary" 
               : "hover:text-brand-primary-hover"
           }`}
