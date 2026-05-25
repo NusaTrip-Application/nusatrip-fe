@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, ListFilter, ArrowUpDown, Plus, Calendar, Star, Bookmark } from "lucide-react";
 
@@ -44,8 +44,48 @@ const mockPlans = [
   }
 ];
 
+const formatTripRange = (startStr: string, endStr: string) => {
+  if (!startStr || !endStr) return "Tanggal tidak ditentukan";
+  const startObj = new Date(startStr);
+  const endObj = new Date(endStr);
+  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+  return `${startObj.toLocaleDateString('id-ID', options)} - ${endObj.toLocaleDateString('id-ID', { ...options, year: 'numeric' })}`;
+};
+
 export default function MyPlansDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [plans, setPlans] = useState<any[]>(mockPlans);
+
+  useEffect(() => {
+    const loadedPlans: any[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("plan_")) {
+        try {
+          const planData = JSON.parse(localStorage.getItem(key) || "{}");
+          const id = key.replace("plan_", "");
+          
+          loadedPlans.push({
+            id: id,
+            title: planData.title || "Untitled Plan",
+            location: planData.destination ? `${planData.destination}, Indonesia` : "Lokasi tidak ditentukan",
+            date: formatTripRange(planData.startDate, planData.endDate),
+            type: planData.isPublic ? "Published" : "Private",
+            rating: planData.isPublic ? 4.8 : null,
+            reviews: planData.isPublic ? 120 : null,
+            saved: planData.isPublic ? "2.3K" : null,
+            img: planData.bannerImage || "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=500&auto=format&fit=crop&q=60",
+            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60"
+          });
+        } catch (e) {
+          console.error("Failed to parse plan", key);
+        }
+      }
+    }
+    if (loadedPlans.length > 0) {
+      setPlans(loadedPlans);
+    }
+  }, []);
 
   return (
     <div className="w-full max-w-[1200px] mx-auto mb-12">
@@ -87,7 +127,7 @@ export default function MyPlansDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockPlans.map((plan) => (
+        {plans.map((plan) => (
           <div key={plan.id} className="bg-bg-surface border border-border-default rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
 
             <div className="relative h-48 w-full">

@@ -1,0 +1,334 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { Calendar, Users, MapPin, Map, Settings, UploadCloud, Info, Trash2 } from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import MobileNav from "@/components/MobileNav";
+
+const formatTripRange = (startStr: string, endStr: string) => {
+  if (!startStr || !endStr) return "Tanggal tidak ditentukan";
+  const startObj = new Date(startStr);
+  const endObj = new Date(endStr);
+  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+  return `${startObj.toLocaleDateString('id-ID', options)} - ${endObj.toLocaleDateString('id-ID', { ...options, year: 'numeric' })}`;
+};
+
+export default function SettingsPage() {
+  const { id } = useParams();
+  const router = useRouter();
+
+  const [tripData, setTripData] = useState<any>({
+    title: "5 Hari 4 Malam di Bandung",
+    destination: "Bandung",
+    startDate: "2026-05-20",
+    endDate: "2026-05-26",
+    pax: 4,
+    budget: "5.000.000",
+    isPublic: true,
+    bannerImage: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&auto=format&fit=crop&q=80"
+  });
+
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  useEffect(() => {
+    const savedPlan = localStorage.getItem(`plan_${id}`);
+    if (savedPlan) {
+      setTripData(JSON.parse(savedPlan));
+    }
+  }, [id]);
+
+  const handlePaxChange = (delta: number) => {
+    setTripData((prev: any) => ({
+      ...prev,
+      pax: Math.max(1, prev.pax + delta)
+    }));
+  };
+
+  const processFile = (file: File) => {
+    if (file && (file.type === "image/jpeg" || file.type === "image/png")) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result;
+        if (result) {
+          setTripData((prev: any) => ({ ...prev, bannerImage: result as string }));
+        }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      alert("Hanya file JPG dan PNG yang didukung.");
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFile(e.target.files[0]);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-bg-main font-sans flex flex-col">
+      <Header />
+
+      <div className="flex-grow">
+
+        <div className="relative w-full h-[280px] md:h-[320px]">
+          <img src={tripData.bannerImage || "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&auto=format&fit=crop&q=80"} alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+          <div className="relative z-10 max-w-[1200px] mx-auto px-4 md:px-8 h-full flex flex-col justify-end pb-10 text-white">
+            <p className="text-[12px] md:text-[13px] font-medium opacity-80 mb-2">My Plans &gt; {tripData.title}</p>
+            <h1 className="text-[32px] md:text-[40px] font-serif font-bold leading-tight mb-4">{tripData.title}</h1>
+            <div className="flex flex-wrap gap-4 md:gap-6 text-[13px] font-medium">
+              <span className="flex items-center gap-1.5"><Calendar size={16} /> {formatTripRange(tripData.startDate, tripData.endDate)}</span>
+              <span className="flex items-center gap-1.5"><MapPin size={16} /> {tripData.destination}, Indonesia</span>
+              <span className="flex items-center gap-1.5"><Users size={16} /> {tripData.pax} Orang</span>
+            </div>
+          </div>
+        </div>
+
+        <main className="max-w-[1200px] mx-auto px-4 md:px-8 mt-8 mb-16">
+          <div className="flex flex-col md:flex-row gap-8">
+
+            <div className="w-full md:w-64 shrink-0 flex flex-col gap-6">
+              <div className="bg-bg-surface border border-border-default rounded-2xl p-3 flex flex-col gap-1 shadow-sm sticky top-24">
+                <SidebarItem icon={<Map size={18} />} label="View Itinerary" href={`/my-plans/${id}`} />
+                {tripData.isPublic && (
+                  <SidebarItem icon={<Users size={18} />} label="Community" href={`/my-plans/${id}/community`} />
+                )}
+                <SidebarItem icon={<Settings size={18} />} label="Settings" active href={`/my-plans/${id}/settings`} />
+              </div>
+            </div>
+
+            <div className="flex-grow flex flex-col gap-6">
+
+              <div>
+                <h2 className="text-[24px] font-serif font-bold text-text-heading mb-2">Pengaturan Plan</h2>
+                <p className="text-[14px] text-text-body font-medium">
+                  Kelola detail perjalanan dan preferensi visibilitas untuk rencana liburan Anda.
+                </p>
+              </div>
+
+              <div className="bg-bg-surface border border-border-default rounded-2xl p-6 md:p-8 shadow-sm">
+                <h3 className="text-[18px] font-bold text-text-heading mb-6">Informasi Dasar</h3>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[13px] font-medium text-text-heading mb-2">Judul Itinerary</label>
+                    <input
+                      type="text"
+                      value={tripData.title}
+                      onChange={(e) => setTripData({ ...tripData, title: e.target.value })}
+                      className="w-full border border-border-default rounded-lg px-4 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary bg-bg-main text-text-heading"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[13px] font-medium text-text-heading mb-2">Tanggal Perjalanan</label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="date"
+                            value={tripData.startDate}
+                            onChange={(e) => setTripData({ ...tripData, startDate: e.target.value })}
+                            className="w-full border border-border-default rounded-lg px-3 py-2.5 text-[14px] bg-bg-main text-text-heading focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                          />
+                        </div>
+                        <div className="flex items-center text-text-muted">-</div>
+                        <div className="relative flex-1">
+                          <input
+                            type="date"
+                            value={tripData.endDate}
+                            onChange={(e) => setTripData({ ...tripData, endDate: e.target.value })}
+                            className="w-full border border-border-default rounded-lg px-3 py-2.5 text-[14px] bg-bg-main text-text-heading focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[13px] font-medium text-text-heading mb-2">Jumlah Peserta</label>
+                      <div className="flex border border-border-default rounded-lg overflow-hidden h-[42px]">
+                        <button onClick={() => handlePaxChange(-1)} className="w-10 flex items-center justify-center bg-bg-main hover:bg-bg-hover text-text-muted border-r border-border-default font-medium">-</button>
+                        <div className="flex-1 flex items-center justify-center text-[14px] bg-bg-main text-text-heading">{tripData.pax}</div>
+                        <button onClick={() => handlePaxChange(1)} className="w-10 flex items-center justify-center bg-bg-main hover:bg-bg-hover text-text-muted border-l border-border-default font-medium">+</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-medium text-text-heading mb-2">Jumlah Anggaran</label>
+                    <div className="flex border border-border-default rounded-lg overflow-hidden h-[42px]">
+                      <div className="bg-brand-primary text-white px-4 flex items-center justify-center text-[14px] font-bold">
+                        Rp
+                      </div>
+                      <input
+                        type="text"
+                        value={tripData.budget || ""}
+                        onChange={(e) => setTripData({ ...tripData, budget: e.target.value })}
+                        placeholder="Contoh: 5.000.000"
+                        className="flex-1 px-4 py-2.5 text-[14px] focus:outline-none bg-bg-main text-text-heading"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[13px] font-medium text-text-heading mb-2">Foto Banner Itinerary</label>
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        className={`border-2 border-dashed rounded-xl h-[140px] flex flex-col items-center justify-center text-center px-4 cursor-pointer transition-colors ${isDragging ? 'border-brand-primary bg-brand-primary/5' : 'border-border-default bg-bg-main hover:bg-bg-hover'}`}
+                      >
+                        <UploadCloud size={24} className={`${isDragging ? 'text-brand-primary' : 'text-text-muted'} mb-2`} />
+                        <p className="text-[14px] font-medium text-text-heading mb-1">Pilih File atau Drag & Drop</p>
+                        <p className="text-[11px] text-text-muted">JPG, PNG up to 5MB</p>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                          accept="image/jpeg, image/png"
+                          className="hidden"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[13px] font-medium text-text-heading mb-2">Preview Foto Banner</label>
+                      <div className="h-[140px] w-full rounded-xl overflow-hidden border border-border-default bg-bg-surface flex items-center justify-center">
+                        <img src={tripData.bannerImage || "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&auto=format&fit=crop&q=80"} alt="Preview Banner" className="w-full h-full object-cover" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-bg-surface border border-border-default rounded-2xl p-6 md:p-8 shadow-sm">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-[18px] font-bold text-text-heading mb-1">Visibilitas Plan</h3>
+                    <p className="text-[13px] text-text-body md:w-3/4">
+                      Atur siapa saja yang dapat melihat rencana perjalanan ini. Plan publik dapat menginspirasi wisatawan lain di komunitas NusaTrip.
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div
+                      onClick={() => setTripData({ ...tripData, isPublic: !tripData.isPublic })}
+                      className={`w-12 h-6 rounded-full flex items-center cursor-pointer px-1 transition-colors ${tripData.isPublic ? 'bg-brand-primary' : 'bg-border-default'}`}
+                    >
+                      <div className={`w-4 h-4 rounded-full bg-white transition-transform ${tripData.isPublic ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                    </div>
+                    <span className="text-[11px] font-medium text-brand-primary">{tripData.isPublic ? 'Publik' : 'Privat'}</span>
+                  </div>
+                </div>
+
+                {tripData.isPublic && (
+                  <div className="flex items-start gap-3 bg-brand-primary/10 rounded-lg p-4 mt-4">
+                    <Info size={18} className="text-brand-primary shrink-0 mt-0.5" />
+                    <p className="text-[13px] text-brand-primary font-medium">
+                      Plan Anda saat ini Publik. Siapapun dengan tautan dapat melihat itinerary ini.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-red-50/50 border border-red-200 rounded-2xl p-6 md:p-8 shadow-sm">
+                <h3 className="text-[18px] font-bold text-red-600 mb-2">Zona Bahaya</h3>
+                <p className="text-[13px] text-red-800 mb-6 md:w-3/4">
+                  Menghapus rencana perjalanan akan menghilangkan semua data itinerary, reservasi, dan catatan secara permanen.
+                </p>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-[13px] font-bold flex items-center gap-2 transition-colors"
+                >
+                  <Trash2 size={16} /> Hapus Plan Ini
+                </button>
+              </div>
+
+              {/* 3. Perlebar margin-top agar tombol tidak menempel dengan kartu Zona Bahaya */}
+              <div className="flex justify-end items-center gap-4 mt-6">
+                <button className="px-6 py-2.5 rounded-lg border border-border-default text-text-heading text-[14px] font-bold hover:bg-bg-hover transition-colors bg-bg-surface">
+                  Batalkan
+                </button>
+                <button
+                  onClick={() => {
+                    localStorage.setItem(`plan_${id}`, JSON.stringify(tripData));
+                    alert("Perubahan berhasil disimpan!");
+                  }}
+                  className="px-6 py-2.5 rounded-lg bg-brand-primary text-white text-[14px] font-bold hover:opacity-90 transition-opacity shadow-sm"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-bg-surface w-full max-w-sm rounded-2xl p-6 shadow-xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-[18px] font-bold text-text-heading mb-2">Hapus Rencana?</h3>
+            <p className="text-[14px] text-text-body mb-6">
+              Rencana perjalanan ini akan dihapus secara permanen beserta semua jadwal di dalamnya.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-border-default text-[13px] font-bold text-text-heading hover:bg-bg-hover transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.removeItem(`plan_${id}`);
+                  localStorage.removeItem(`itinerary_${id}`);
+                  router.push("/");
+                }}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-white text-[13px] font-bold hover:bg-red-700 transition-colors"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Footer />
+      <MobileNav />
+    </div>
+  );
+}
+
+function SidebarItem({ icon, label, active, href }: { icon: React.ReactNode; label: string; active?: boolean; href?: string }) {
+  const Comp = href ? Link : "div";
+  return (
+    <Comp href={href || "#"} className={`px-4 py-3.5 rounded-xl font-bold text-[14px] flex items-center gap-3 transition-colors ${active ? 'bg-brand-primary text-white' : 'bg-transparent text-text-muted hover:bg-bg-hover hover:text-text-heading'}`}>
+      {icon}
+      {label}
+    </Comp>
+  );
+}

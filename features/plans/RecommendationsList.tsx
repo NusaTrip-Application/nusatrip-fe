@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, Star, List, LayoutGrid, PlusCircle, X, MapPin, Clock, Globe, Phone } from "lucide-react";
-
-// Import fungsi API BE
 import { getRecommendationsByDestination } from "@/services/plans"; 
 
 const filters = ["All Spots", "Nature", "Culinary", "Architecture", "Art & Culture", "Family"];
@@ -177,6 +175,12 @@ export default function RecommendationsList() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
+  const router = useRouter();
+  const tripId = searchParams.get("tripId") || "1";
+
+  const [chosenTime, setChosenTime] = useState("09:00");
+  const [notes, setNotes] = useState("");
+
   useEffect(() => {
     setCurrentPage(1);
   }, [activeFilter]);
@@ -216,10 +220,19 @@ export default function RecommendationsList() {
     e.stopPropagation();
     setSelectedPlace(place);
     setModalType("add");
+    setNotes("");
     
     const dateOptions = generateDateOptions(startDate, endDate);
     if (dateOptions.length > 0) {
-      setChosenDate(dateOptions[0]);
+      const firstDate = dateOptions[0];
+      setChosenDate(firstDate);
+      
+      const isWeekend = firstDate.startsWith("Sabtu") || firstDate.startsWith("Minggu");
+      const opHours = isWeekend ? place.hours?.weekend : place.hours?.weekday;
+      const opts = generateTimeOptionsBasedOnHours(opHours);
+      if (opts.length > 0) {
+        setChosenTime(opts[0]);
+      }
     }
   };
 
@@ -498,7 +511,16 @@ export default function RecommendationsList() {
                     <label className="block text-[12px] font-bold text-text-heading mb-1.5">Pilih Hari</label>
                     <select 
                       value={chosenDate}
-                      onChange={(e) => setChosenDate(e.target.value)}
+                      onChange={(e) => {
+                        const newDate = e.target.value;
+                        setChosenDate(newDate);
+                        const isWknd = newDate.startsWith("Sabtu") || newDate.startsWith("Minggu");
+                        const opHours = isWknd ? selectedPlace.hours?.weekend : selectedPlace.hours?.weekday;
+                        const opts = generateTimeOptionsBasedOnHours(opHours);
+                        if (opts.length > 0 && !opts.includes(chosenTime)) {
+                          setChosenTime(opts[0]);
+                        }
+                      }}
                       className="w-full px-3 py-2.5 rounded-lg border border-border-default bg-bg-surface text-[14px] font-medium focus:ring-1 focus:ring-brand-primary outline-none"
                     >
                       {dateOptions.map((date, index) => (
@@ -506,24 +528,74 @@ export default function RecommendationsList() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="block text-[12px] font-bold text-text-heading">Waktu Kunjungan</label>
-                      <span className="text-[10px] font-bold text-brand-primary">Buka: {operationalHours}</span>
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <label className="block text-[12px] font-bold text-text-heading">Waktu Kunjungan</label>
+                        <span className="text-[10px] font-bold text-brand-primary">Buka: {operationalHours}</span>
+                      </div>
+                      <select 
+                        value={chosenTime}
+                        onChange={(e) => setChosenTime(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg border border-border-default bg-bg-surface text-[14px] font-medium focus:ring-1 focus:ring-brand-primary outline-none"
+                      >
+                        {dynamicTimeOptions.map((time, index) => (
+                          <option key={index} value={time}>{time}</option>
+                        ))}
+                      </select>
                     </div>
-                    <select className="w-full px-3 py-2.5 rounded-lg border border-border-default bg-bg-surface text-[14px] font-medium focus:ring-1 focus:ring-brand-primary outline-none">
-                      {dynamicTimeOptions.map((time, index) => (
-                        <option key={index} value={time}>{time}</option>
-                      ))}
-                    </select>
-                  </div>
+                    
+                    <div>
+                      <label className="block text-[12px] font-bold text-text-heading mb-1.5">Catatan</label>
+                      <input 
+                        type="text"
+                        placeholder="Pergi ke sini karena..."
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg border border-border-default bg-bg-surface text-[14px] font-medium focus:ring-1 focus:ring-brand-primary outline-none"
+                      />
+                    </div>
                 </div>
 
                 <div className="flex gap-3">
                   <button onClick={closeModal} className="flex-1 py-2.5 border border-border-strong text-text-heading font-bold text-[14px] rounded-xl hover:bg-bg-hover transition-colors">
                     Cancel
                   </button>
-                  <button onClick={() => { alert(`${selectedPlace.name} ditambahkan ke itinerary untuk hari ${chosenDate}!`); closeModal(); }} className="flex-1 bg-brand-primary hover:bg-brand-primary-hover text-text-light font-bold text-[14px] py-2.5 rounded-xl transition-colors">
+                  <button 
+                    onClick={() => {
+                      const newActivity = {
+                        id: Date.now(),
+                        date: chosenDate,
+                        time: chosenTime,
+                        title: selectedPlace.name,
+                        subtitle: selectedPlace.address,
+                        category: selectedPlace.category,
+                        rating: selectedPlace.rating,
+                        img: selectedPlace.img,
+                        notes: notes || "Mulai hari dengan aktivitas seru!",
+                        price: selectedPlace.price
+                      };
+
+                      const existingData = localStorage.getItem(`itinerary_${tripId}`);
+                      const itineraryList = existingData ? JSON.parse(existingData) : [];
+
+                      const isConflict = itineraryList.some((item: any) => 
+                        item.date === chosenDate && item.time === chosenTime
+                      );
+
+                      if (isConflict) {
+                        alert("Sudah ada jadwal di jam tersebut pada hari ini. Silakan pilih jam lain.");
+                        return;
+                      }
+
+                      itineraryList.push(newActivity);
+                      localStorage.setItem(`itinerary_${tripId}`, JSON.stringify(itineraryList));
+
+                      closeModal();
+
+                      router.push(`/my-plans/${tripId}`);
+                    }} 
+                    className="flex-1 bg-brand-primary hover:bg-brand-primary-hover text-text-light font-bold text-[14px] py-2.5 rounded-xl transition-colors"
+                  >
                     Add
                   </button>
                 </div>
