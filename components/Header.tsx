@@ -1,10 +1,26 @@
+// components/Header.tsx  (UPDATED — drop-in replacement)
+// ============================================================
+// NusaTrip — Header with Profile Dropdown
+// Stack: Next.js + TypeScript + Tailwind CSS v4
+// ============================================================
+
 "use client";
 
-import { MapPin, Search, Bell, Menu, ChevronDown } from "lucide-react";
+import {
+  MapPin,
+  Search,
+  Bell,
+  Menu,
+  ChevronDown,
+  Settings,
+  Bookmark,
+  LogOut,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 
+// ── Search input (kept in Suspense because it reads searchParams) ────────────
 function HeaderSearchInput() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -17,8 +33,8 @@ function HeaderSearchInput() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const query = inputValue.trim() ? inputValue.trim() : "Semua";
-    router.push(`/search?q=${encodeURIComponent(query)}`);
+    const q = inputValue.trim() ? inputValue.trim() : "Semua";
+    router.push(`/search?q=${encodeURIComponent(q)}`);
   };
 
   return (
@@ -32,102 +48,228 @@ function HeaderSearchInput() {
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         placeholder="Cari lokasi (kota)..."
-        className="pl-10 pr-12 py-2 bg-[#F3F3FE] border border-border-default rounded-md text-sm font-medium focus:outline-none focus:ring-1 focus:ring-border-focus w-72 xl:w-96 transition-shadow"
+        className="pl-10 pr-4 py-2 bg-[#F3F3FE] border border-border-default rounded-md text-sm font-medium focus:outline-none focus:ring-1 focus:ring-border-focus w-72 xl:w-96 transition-shadow"
       />
     </form>
   );
 }
 
+// ── Profile Dropdown ─────────────────────────────────────────────────────────
+interface DropdownItem {
+  icon: React.ReactNode;
+  label: string;
+  href?: string;
+  onClick?: () => void;
+  danger?: boolean;
+  active?: boolean;
+}
+
+function ProfileDropdown({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
+
+  const items: DropdownItem[] = [
+    {
+      icon: <Settings size={16} />,
+      label: "Pengaturan",
+      href: "/profile",
+      active: true,
+    },
+    {
+      icon: <Bookmark size={16} />,
+      label: "Saved References",
+      href: "/saved-references",
+    },
+    {
+      icon: <LogOut size={16} />,
+      label: "Log Out",
+      danger: false,
+      onClick: () => {
+        // clear auth then redirect
+        router.push("/login");
+        onClose();
+      },
+    },
+  ];
+
+  return (
+    /*
+      Pixel-perfect match to "Dropdown Profile.png":
+      - white card, rounded-xl, shadow-lg
+      - 180px wide, sits below avatar
+      - active item = brand-primary bg + white text
+      - dividers between items
+    */
+    <div
+      className="
+        absolute right-0 top-[calc(100%+10px)] z-50
+        w-[190px] bg-bg-surface
+        rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)]
+        border border-border-default
+        overflow-hidden
+        animate-in fade-in slide-in-from-top-1 duration-150
+      "
+    >
+      {items.map((item, i) => (
+        <React.Fragment key={item.label}>
+          {i > 0 && <div className="h-px bg-border-default mx-3" />}
+          {item.href ? (
+            <Link
+              href={item.href}
+              onClick={onClose}
+              className={`
+                flex items-center gap-2.5 px-4 py-3 text-sm font-semibold
+                transition-colors
+                ${
+                  item.active
+                    ? "bg-brand-primary text-white"
+                    : "text-text-heading hover:bg-bg-hover"
+                }
+              `}
+            >
+              {item.icon}
+              {item.label}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={item.onClick}
+              className={`
+                w-full flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-left
+                transition-colors
+                ${item.danger ? "text-error hover:bg-red-50" : "text-text-heading hover:bg-bg-hover"}
+              `}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+// ── Header ───────────────────────────────────────────────────────────────────
 export default function Header() {
   const pathname = usePathname();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+    if (dropdownOpen) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [dropdownOpen]);
+
+  const navLinks = [
+    { href: "/", label: "Home" },
+    { href: "/my-plans", label: "My Plans" },
+    { href: "/community", label: "Community" },
+  ];
 
   return (
     <header className="flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-bg-surface border-b border-border-default sticky top-0 z-50">
+      {/* ── Left: Logo ── */}
       <div className="flex items-center gap-3">
         <button className="lg:hidden text-text-body hover:text-text-heading transition-colors">
           <Menu size={24} />
         </button>
         <Link href="/" className="flex items-center gap-1.5 md:gap-2">
           <MapPin className="text-brand-primary md:w-7 md:h-7" size={24} />
-          <span className="text-lg md:text-2xl font-bold text-text-heading tracking-tight">NusaTrip</span>
+          <span className="text-lg md:text-2xl font-bold text-text-heading tracking-tight">
+            NusaTrip
+          </span>
         </Link>
       </div>
 
+      {/* ── Center: Nav ── */}
       <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold text-text-body">
-        <Link
-          href="/"
-          className={`pb-1 transition-colors ${
-            pathname === "/" 
-              ? "text-brand-primary border-b-2 border-brand-primary" 
-              : "hover:text-brand-primary-hover"
-          }`}
-        >
-          Home
-        </Link>
-        <Link 
-          href="/my-plans" 
-          className={`pb-1 transition-colors ${
-            pathname.startsWith("/my-plans") 
-              ? "text-brand-primary border-b-2 border-brand-primary" 
-              : "hover:text-brand-primary-hover"
-          }`}
-        >
-          My Plans
-        </Link>
-        <Link 
-          href="/community" 
-          className={`pb-1 transition-colors ${
-            pathname === "/community" 
-              ? "text-brand-primary border-b-2 border-brand-primary" 
-              : "hover:text-brand-primary-hover"
-          }`}
-        >
-          Community
-        </Link>
-        <Link 
-          href="/profile" 
-          className={`pb-1 transition-colors ${
-            pathname === "/profile" 
-              ? "text-brand-primary border-b-2 border-brand-primary" 
-              : "hover:text-brand-primary-hover"
-          }`}
-        >
-          Profile
-        </Link>
+        {navLinks.map(({ href, label }) => {
+          const active =
+            href === "/"
+              ? pathname === "/"
+              : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`pb-1 transition-colors ${
+                active
+                  ? "text-brand-primary border-b-2 border-brand-primary"
+                  : "hover:text-brand-primary-hover"
+              }`}
+            >
+              {label}
+            </Link>
+          );
+        })}
       </nav>
 
-      <div className="hidden lg:flex items-center gap-4">
-        <Suspense fallback={
-          <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
-            <input
-              type="text"
-              placeholder="Cari lokasi (kota)..."
-              className="pl-10 pr-12 py-2 bg-[#F3F3FE] border border-border-default rounded-md text-sm font-medium w-72 xl:w-96"
-              disabled
-            />
-          </div>
-        }>
-          <HeaderSearchInput />
-        </Suspense>
-      </div>
-
+      {/* ── Right: Search + Bell + User ── */}
       <div className="flex items-center gap-3 md:gap-4">
+        {/* Search — desktop only */}
+        <div className="hidden lg:block">
+          <Suspense
+            fallback={
+              <div className="relative">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder="Cari lokasi (kota)..."
+                  className="pl-10 pr-4 py-2 bg-[#F3F3FE] border border-border-default rounded-md text-sm font-medium w-72 xl:w-96"
+                  disabled
+                />
+              </div>
+            }
+          >
+            <HeaderSearchInput />
+          </Suspense>
+        </div>
+
+        {/* Bell */}
         <button className="text-text-body hover:text-brand-primary transition-colors">
-          <Bell size={20} className="md:w-5 md:h-5" />
+          <Bell size={20} />
         </button>
-        <div className="flex items-center gap-2 md:gap-3 cursor-pointer group">
-          <img
-            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
-            alt="Andi Wijaya"
-            className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-sm ring-1 ring-border-default"
-          />
-          <div className="hidden lg:flex items-center gap-1">
-            <span className="text-sm font-semibold text-text-heading group-hover:text-brand-primary transition-colors">
-              Andi Wijaya
-            </span>
-            <ChevronDown size={14} className="text-text-muted group-hover:text-text-heading transition-colors" />
-          </div>
+
+        {/* ── Profile Button + Dropdown ── */}
+        <div ref={dropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setDropdownOpen((v) => !v)}
+            className="flex items-center gap-2 md:gap-3 cursor-pointer group"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+              alt="Andi Wijaya"
+              className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-sm ring-1 ring-border-default"
+            />
+            <div className="hidden lg:flex items-center gap-1">
+              <span className="text-sm font-semibold text-text-heading group-hover:text-brand-primary transition-colors">
+                Andi Wijaya
+              </span>
+              <ChevronDown
+                size={14}
+                className={`text-text-muted transition-transform duration-200 ${
+                  dropdownOpen ? "rotate-180" : ""
+                }`}
+              />
+            </div>
+          </button>
+
+          {dropdownOpen && (
+            <ProfileDropdown onClose={() => setDropdownOpen(false)} />
+          )}
         </div>
       </div>
     </header>
