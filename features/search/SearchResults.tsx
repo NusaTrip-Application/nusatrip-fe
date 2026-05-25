@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight, ChevronDown, Search } from "lucide-react";
 import { INDONESIAN_PROVINCES, MOCK_DESTINATIONS } from "@/lib/data";
 
@@ -153,11 +154,10 @@ export default function SearchResults() {
                       </svg>
                     </div>
                     <span
-                      className={`text-[14px] font-medium transition-colors duration-150 ${
-                        isChecked
+                      className={`text-[14px] font-medium transition-colors duration-150 ${isChecked
                           ? "text-text-heading font-semibold"
                           : "text-text-body group-hover:text-text-heading"
-                      }`}
+                        }`}
                     >
                       {province}
                     </span>
@@ -246,16 +246,15 @@ export default function SearchResults() {
                           {dest.description}
                         </p>
                       </div>
-                      <a
-                        href="#"
-                        onClick={(e) => e.preventDefault()}
+                      <Link
+                        href={`/search/${dest.name.toLowerCase().replace(/\s+/g, "-")}`}
                         className="text-[13.5px] font-bold text-brand-primary hover:text-brand-primary-hover transition-colors inline-flex items-center gap-1.5 mt-4 group/link"
                       >
                         Lihat Detail
                         <span className="group-hover/link:translate-x-1 transition-transform duration-200">
                           →
                         </span>
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 ))}
@@ -266,11 +265,10 @@ export default function SearchResults() {
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`w-10 h-10 rounded-full border border-border-default flex items-center justify-center transition-all ${
-                      currentPage === 1
+                    className={`w-10 h-10 rounded-full border border-border-default flex items-center justify-center transition-all ${currentPage === 1
                         ? "text-text-muted opacity-50 cursor-not-allowed"
                         : "text-text-body hover:bg-bg-hover hover:border-border-strong cursor-pointer"
-                    }`}
+                      }`}
                     aria-label="Previous Page"
                   >
                     <ChevronLeft size={18} />
@@ -283,11 +281,10 @@ export default function SearchResults() {
                         <button
                           key={pageNum}
                           onClick={() => handlePageChange(pageNum)}
-                          className={`w-10 h-10 rounded-full font-bold text-sm transition-all cursor-pointer ${
-                            isActive
+                          className={`w-10 h-10 rounded-full font-bold text-sm transition-all cursor-pointer ${isActive
                               ? "bg-brand-primary text-text-light"
                               : "border border-border-default text-text-body hover:bg-bg-hover hover:border-border-strong"
-                          }`}
+                            }`}
                         >
                           {pageNum}
                         </button>
@@ -298,11 +295,10 @@ export default function SearchResults() {
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`w-10 h-10 rounded-full border border-border-default flex items-center justify-center transition-all ${
-                      currentPage === totalPages
+                    className={`w-10 h-10 rounded-full border border-border-default flex items-center justify-center transition-all ${currentPage === totalPages
                         ? "text-text-muted opacity-50 cursor-not-allowed"
                         : "text-text-body hover:bg-bg-hover hover:border-border-strong cursor-pointer"
-                    }`}
+                      }`}
                     aria-label="Next Page"
                   >
                     <ChevronRight size={18} />

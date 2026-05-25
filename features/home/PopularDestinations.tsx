@@ -1,5 +1,6 @@
 import React from "react";
 import { MapPin } from "lucide-react";
+import Link from "next/link";
 
 export default function PopularDestinations() {
   return (
@@ -8,9 +9,9 @@ export default function PopularDestinations() {
         <h2 className="text-[32px] font-bold leading-[1.3] -tracking-[0.01em] text-text-heading">
           Destinasi Populer
         </h2>
-        <button className="text-brand-primary font-semibold flex items-center gap-1.5 hover:underline text-sm md:text-base">
+        <Link href="/search" className="text-brand-primary font-semibold flex items-center gap-1.5 hover:underline text-sm md:text-base">
           Lihat semua →
-        </button>
+        </Link>
       </div>
 
       <div className="flex overflow-x-auto gap-5 pb-4 snap-x hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
@@ -21,9 +22,10 @@ export default function PopularDestinations() {
           { name: "Malang", province: "Jawa Timur", img: "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=500&auto=format&fit=crop&q=60" },
           { name: "Jakarta", province: "DKI Jakarta", img: "https://images.unsplash.com/photo-1555899434-94d1368aa7af?w=500&auto=format&fit=crop&q=60" },
         ].map((dest, i) => (
-          <div
+          <Link
             key={i}
-            className="min-w-[220px] md:min-w-[260px] flex-none snap-start bg-bg-surface rounded-lg overflow-hidden border border-border-default shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
+            href={`/search/${dest.name.toLowerCase().replace(/\s+/g, "-")}`}
+            className="min-w-[220px] md:min-w-[260px] flex-none snap-start bg-bg-surface rounded-lg overflow-hidden border border-border-default shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer block"
           >
             <div className="overflow-hidden">
               <img
@@ -38,7 +40,7 @@ export default function PopularDestinations() {
                 <MapPin size={16} className="text-text-muted" /> {dest.province}
               </p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </section>

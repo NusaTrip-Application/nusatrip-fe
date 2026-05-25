@@ -1,45 +1,52 @@
 "use client";
 
 import { Star, Bookmark, Calendar, Wallet } from "lucide-react";
+import { useState } from "react";
 
 export default function TripInspiration() {
+  const [savedTrips, setSavedTrips] = useState<Record<number, boolean>>({});
+  const toggleSave = (idx: number) => setSavedTrips(prev => ({ ...prev, [idx]: !prev[idx] }));
+
   const trips = [
     {
       title: "5 Hari 4 Malam di Bandung",
       loc: "Bandung, Jawa Barat",
       img: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80",
       author: "Budi Santoso",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
       duration: "5 Hari",
       budget: "Rp 3.000.000",
       rating: "4.8",
       reviewCount: "120",
-      saves: "2.3K saved"
+      saves: "2.3K saved",
     },
     {
       title: "5 Hari 4 Malam di Bandung",
       loc: "Bandung, Jawa Barat",
       img: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80",
       author: "Budi Santoso",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
       duration: "5 Hari",
       budget: "Rp 3.000.000",
       rating: "4.8",
       reviewCount: "120",
-      saves: "2.3K saved"
+      saves: "2.3K saved",
     },
     {
       title: "5 Hari 4 Malam di Bandung",
       loc: "Bandung, Jawa Barat",
       img: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80",
       author: "Budi Santoso",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
       duration: "5 Hari",
       budget: "Rp 3.000.000",
       rating: "4.8",
       reviewCount: "120",
-      saves: "2.3K saved"
-    }
+      saves: "2.3K saved",
+    },
   ];
 
   return (
@@ -66,10 +73,18 @@ export default function TripInspiration() {
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <button
-                className="absolute top-4 right-4 bg-white hover:bg-bg-hover rounded-full p-2.5 shadow-md flex items-center justify-center transition-colors cursor-pointer group/btn border border-border-default"
+                className="absolute top-4 right-4 bg-white hover:bg-bg-hover rounded-full p-2.5 shadow-md flex items-center justify-center transition-colors cursor-pointer border border-border-default"
                 aria-label="Save Trip"
+                onClick={(e) => { e.preventDefault(); toggleSave(i); }}
               >
-                <Bookmark size={15} className="text-brand-primary fill-transparent group-hover/btn:fill-brand-primary transition-colors" />
+                <Bookmark
+                  size={15}
+                  className={`transition-colors ${
+                    savedTrips[i]
+                      ? "text-brand-primary fill-brand-primary"
+                      : "text-brand-primary fill-transparent hover:fill-brand-primary"
+                  }`}
+                />
               </button>
             </div>
 
@@ -95,9 +110,14 @@ export default function TripInspiration() {
 
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-1.5 text-[13px] font-semibold text-text-heading">
-                    <Star size={15} className="text-brand-warm fill-brand-warm" />
+                    <Star
+                      size={15}
+                      className="text-brand-warm fill-brand-warm"
+                    />
                     <span>{trip.rating}</span>
-                    <span className="text-text-muted font-medium">({trip.reviewCount})</span>
+                    <span className="text-text-muted font-medium">
+                      ({trip.reviewCount})
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-[13px] font-semibold text-text-body">
                     <Bookmark size={15} className="text-text-muted" />
