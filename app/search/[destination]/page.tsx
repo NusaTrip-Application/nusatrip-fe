@@ -6,7 +6,8 @@ import DestinationDetails from "@/features/search/DestinationDetails";
 
 export const metadata = {
   title: "Detail Destinasi - NusaTrip",
-  description: "Jelajahi informasi lengkap mengenai tempat wisata populer dan inspirasi perjalanan di NusaTrip.",
+  description:
+    "Jelajahi informasi lengkap mengenai tempat wisata populer dan inspirasi perjalanan di NusaTrip.",
 };
 
 export default async function DestinationPage({
