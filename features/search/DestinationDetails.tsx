@@ -582,11 +582,10 @@ export default function DestinationDetails({
 
                       <button
                         onClick={() => toggleItinerary(place.name)}
-                        className={`w-full py-2.5 px-4 rounded-lg font-semibold text-xs md:text-sm flex items-center justify-center gap-2 cursor-pointer transition-all border ${
-                          isAdded
+                        className={`w-full py-2.5 px-4 rounded-lg font-semibold text-xs md:text-sm flex items-center justify-center gap-2 cursor-pointer transition-all border ${isAdded
                             ? "bg-bg-soft-green border-brand-accent text-brand-accent hover:bg-brand-accent/10"
                             : "bg-brand-primary border-brand-primary text-white hover:bg-brand-primary-hover shadow-sm"
-                        }`}
+                          }`}
                       >
                         {isAdded ? (
                           <>
@@ -643,11 +642,10 @@ export default function DestinationDetails({
                   >
                     <Bookmark
                       size={14}
-                      className={`transition-colors ${
-                        savedCommunity[idx]
+                      className={`transition-colors ${savedCommunity[idx]
                           ? "text-brand-primary fill-brand-primary"
                           : "text-brand-primary fill-transparent hover:fill-brand-primary"
-                      }`}
+                        }`}
                     />
                   </button>
                 </div>
