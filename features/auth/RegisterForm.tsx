@@ -19,10 +19,16 @@ export default function RegisterForm() {
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
+    mode: "onChange",
   });
 
   const onSubmit = (data: RegisterFormValues) => {
     console.log("Data Register Valid:", data);
+    localStorage.setItem("nusatrip_user", JSON.stringify({
+      namaLengkap: data.fullName,
+      email: data.email,
+      password: data.password,
+    }));
     alert("Pendaftaran sukses! Mengarahkan ke halaman Login...");
     router.push("/login");
   };
@@ -94,7 +100,7 @@ export default function RegisterForm() {
                   type={showPassword ? "text" : "password"} 
                   placeholder="Min. 8 karakter" 
                   {...register("password")}
-                  className={`w-full pl-11 pr-12 py-3 rounded-md border bg-bg-surface focus:outline-none focus:ring-1 text-sm font-medium transition-shadow ${errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-border-default focus:border-border-focus focus:ring-border-focus"}`}
+                  className={`w-full pl-11 pr-12 py-3 rounded-md border bg-bg-surface focus:outline-none focus:ring-1 text-sm font-medium transition-shadow [&::-ms-reveal]:hidden [&::-ms-clear]:hidden ${errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-border-default focus:border-border-focus focus:ring-border-focus"}`}
                 />
                 <button 
                   type="button"
@@ -115,7 +121,7 @@ export default function RegisterForm() {
                   type={showConfirmPassword ? "text" : "password"} 
                   placeholder="Ulangi kata sandi" 
                   {...register("confirmPassword")}
-                  className={`w-full pl-11 pr-12 py-3 rounded-md border bg-bg-surface focus:outline-none focus:ring-1 text-sm font-medium transition-shadow ${errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-border-default focus:border-border-focus focus:ring-border-focus"}`}
+                  className={`w-full pl-11 pr-12 py-3 rounded-md border bg-bg-surface focus:outline-none focus:ring-1 text-sm font-medium transition-shadow [&::-ms-reveal]:hidden [&::-ms-clear]:hidden ${errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-border-default focus:border-border-focus focus:ring-border-focus"}`}
                 />
                 <button 
                   type="button"

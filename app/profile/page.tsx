@@ -1,12 +1,7 @@
-// app/profile/page.tsx
-// ============================================================
-// NusaTrip - User Profile Page (Informasi Pribadi)
-// Stack: Next.js + TypeScript + Tailwind CSS v4
-// ============================================================
-
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
@@ -18,6 +13,8 @@ import {
   Camera,
   Save,
   X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 function InstagramIcon({ size = 16 }: { size?: number }) {
@@ -39,21 +36,15 @@ function InstagramIcon({ size = 16 }: { size?: number }) {
   );
 }
 
-// ============================================================
-// TYPES
-// ============================================================
 interface ProfileForm {
   namaLengkap: string;
   email: string;
   nomorTelepon: string;
   socialMediaInstagram: string;
+  passwordLama: string;
   passwordBaru: string;
   konfirmasiPassword: string;
 }
-
-// ============================================================
-// SUB-COMPONENTS
-// ============================================================
 
 function AvatarUpload({
   src,
@@ -67,6 +58,13 @@ function AvatarUpload({
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Ukuran foto terlalu besar! Harap pilih foto di bawah 2MB.");
+      e.target.value = "";
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => onChange(reader.result as string);
     reader.readAsDataURL(file);
@@ -74,14 +72,12 @@ function AvatarUpload({
 
   return (
     <div className="flex flex-col items-center gap-3 py-4">
-      {/* Avatar circle */}
       <div className="relative w-[120px] h-[120px]">
         <img
           src={src}
           alt="User Avatar"
           className="w-full h-full rounded-full object-cover ring-4 ring-border-default"
         />
-        {/* Camera badge */}
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
@@ -97,7 +93,6 @@ function AvatarUpload({
           onChange={handleFile}
         />
       </div>
-      {/* Change photo link */}
       <button
         type="button"
         onClick={() => fileRef.current?.click()}
@@ -117,6 +112,9 @@ interface InputFieldProps {
   onChange: (val: string) => void;
   type?: string;
   placeholder?: string;
+  autoComplete?: string;
+  disabled?: boolean;
+  error?: string;
 }
 
 function InputField({
@@ -126,7 +124,13 @@ function InputField({
   onChange,
   type = "text",
   placeholder = "",
+  autoComplete,
+  disabled = false,
+  error,
 }: InputFieldProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPasswordField = type === "password";
+
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-sm font-medium text-text-heading">{label}</label>
@@ -135,27 +139,41 @@ function InputField({
           {icon}
         </span>
         <input
-          type={type}
+          type={isPasswordField ? (showPassword ? "text" : "password") : type}
           value={value}
           placeholder={placeholder}
+          autoComplete={autoComplete}
+          disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
-          className="
-            w-full pl-10 pr-4 py-2.5
-            bg-bg-soft-gray border border-border-default rounded-lg
+          className={`
+            w-full pl-10 ${isPasswordField ? "pr-12" : "pr-4"} py-2.5
+            bg-bg-soft-gray border rounded-lg
             text-sm font-medium text-text-heading placeholder:text-text-muted
-            focus:outline-none focus:ring-2 focus:ring-border-focus focus:border-border-focus
+            focus:outline-none focus:ring-2 
+            ${error ? "border-error focus:border-error focus:ring-error" : "border-border-default focus:border-border-focus focus:ring-border-focus"}
+            disabled:opacity-60 disabled:cursor-not-allowed
             transition-all
-          "
+            [&::-ms-reveal]:hidden [&::-ms-clear]:hidden
+          `}
         />
+        {isPasswordField && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-body transition-colors"
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        )}
       </div>
+      {error && <p className="text-error text-xs font-medium">{error}</p>}
     </div>
   );
 }
 
-// ============================================================
-// MAIN PROFILE PAGE
-// ============================================================
 export default function ProfilePage() {
+  const router = useRouter();
+
   const [avatarSrc, setAvatarSrc] = useState(
     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80"
   );
@@ -163,36 +181,105 @@ export default function ProfilePage() {
   const [form, setForm] = useState<ProfileForm>({
     namaLengkap: "Andi Wijaya",
     email: "andi.wijaya@traveler.id",
-    nomorTelepon: "+62 812-3456-7890",
-    socialMediaInstagram: "+62 812-3456-7890",
-    passwordBaru: "••••••••••••••",
-    konfirmasiPassword: "••••••••••••••",
+    nomorTelepon: "",
+    socialMediaInstagram: "",
+    passwordLama: "",
+    passwordBaru: "",
+    konfirmasiPassword: "",
   });
 
+  const [errors, setErrors] = useState<Partial<Record<keyof ProfileForm, string>>>({});
+  const [storedPassword, setStoredPassword] = useState<string | null>(null);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("nusatrip_user");
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setForm(prev => ({
+          ...prev,
+          namaLengkap: user.namaLengkap || prev.namaLengkap,
+          email: user.email || prev.email,
+          nomorTelepon: user.nomorTelepon !== undefined ? user.nomorTelepon : prev.nomorTelepon,
+          socialMediaInstagram: user.socialMediaInstagram !== undefined ? user.socialMediaInstagram : prev.socialMediaInstagram,
+        }));
+        if (user.avatarSrc) {
+          setAvatarSrc(user.avatarSrc);
+        }
+        if (user.password) {
+          setStoredPassword(user.password);
+        }
+      } catch (e) {
+        console.error("Failed to parse user data from localStorage", e);
+      }
+    }
+  }, []);
+
   const [isSaving, setIsSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   const set = (key: keyof ProfileForm) => (val: string) =>
     setForm((prev) => ({ ...prev, [key]: val }));
 
   const handleSave = async () => {
+    let newErrors: Partial<Record<keyof ProfileForm, string>> = {};
+
+    if (form.namaLengkap.length < 3) {
+      newErrors.namaLengkap = "Nama lengkap minimal 3 karakter";
+    }
+    if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      newErrors.email = "Format email tidak valid";
+    }
+
+    if (form.nomorTelepon) {
+      if (!/^[+]?[\d\s-]{9,16}$/.test(form.nomorTelepon)) {
+        newErrors.nomorTelepon = "Format nomor telepon tidak valid (9-15 digit)";
+      }
+    }
+
+    if (form.passwordBaru) {
+      if (form.passwordBaru.length < 8) {
+        newErrors.passwordBaru = "Kata sandi minimal 8 karakter";
+      }
+      if (form.passwordBaru !== form.konfirmasiPassword) {
+        newErrors.konfirmasiPassword = "Kata sandi tidak cocok";
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
     setIsSaving(true);
     // Simulate API call
     await new Promise((r) => setTimeout(r, 900));
-    setIsSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
 
-  const handleCancel = () => {
-    setForm({
-      namaLengkap: "Andi Wijaya",
-      email: "andi.wijaya@traveler.id",
-      nomorTelepon: "+62 812-3456-7890",
-      socialMediaInstagram: "+62 812-3456-7890",
-      passwordBaru: "••••••••••••••",
-      konfirmasiPassword: "••••••••••••••",
-    });
+    // Save changes to localStorage
+    const newPassword = form.passwordBaru || storedPassword;
+    const userData = {
+      namaLengkap: form.namaLengkap,
+      email: form.email,
+      nomorTelepon: form.nomorTelepon,
+      socialMediaInstagram: form.socialMediaInstagram,
+      avatarSrc: avatarSrc,
+      password: newPassword,
+    };
+    localStorage.setItem("nusatrip_user", JSON.stringify(userData));
+    window.dispatchEvent(new Event("user-updated"));
+    if (newPassword) {
+      setStoredPassword(newPassword);
+    }
+
+    setForm(prev => ({
+      ...prev,
+      passwordLama: "",
+      passwordBaru: "",
+      konfirmasiPassword: "",
+    }));
+
+    setIsSaving(false);
+    alert("Perubahan profil berhasil disimpan!");
   };
 
   return (
@@ -200,7 +287,6 @@ export default function ProfilePage() {
       <Header />
 
       <main className="flex-grow px-4 md:px-8 py-8 md:py-12 max-w-[1100px] mx-auto w-full">
-        {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-text-heading tracking-tight">
             Informasi Pribadi
@@ -210,15 +296,12 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        {/* ── Card 1: Personal Info ── */}
         <div className="bg-bg-surface border border-border-default rounded-xl shadow-sm mb-6 p-6 md:p-8">
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Left: Avatar */}
             <div className="md:w-[220px] flex-shrink-0 border border-border-default rounded-xl bg-bg-soft-gray/40 flex items-center justify-center">
               <AvatarUpload src={avatarSrc} onChange={setAvatarSrc} />
             </div>
 
-            {/* Right: Form fields */}
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
               <InputField
                 label="Nama Lengkap"
@@ -226,6 +309,7 @@ export default function ProfilePage() {
                 value={form.namaLengkap}
                 onChange={set("namaLengkap")}
                 placeholder="Masukkan nama lengkap"
+                error={errors.namaLengkap}
               />
               <InputField
                 label="Alamat Email"
@@ -234,14 +318,15 @@ export default function ProfilePage() {
                 onChange={set("email")}
                 type="email"
                 placeholder="Masukkan email"
+                error={errors.email}
               />
               <InputField
                 label="Nomor Telepon"
                 icon={<Phone size={16} />}
                 value={form.nomorTelepon}
                 onChange={set("nomorTelepon")}
-                type="tel"
                 placeholder="+62 xxx-xxxx-xxxx"
+                error={errors.nomorTelepon}
               />
               <InputField
                 label="Social Media (Instagram)"
@@ -249,14 +334,13 @@ export default function ProfilePage() {
                 value={form.socialMediaInstagram}
                 onChange={set("socialMediaInstagram")}
                 placeholder="@username"
+                autoComplete="off"
               />
             </div>
           </div>
         </div>
 
-        {/* ── Card 2: Change Password ── */}
         <div className="bg-bg-surface border border-border-default rounded-xl shadow-sm mb-8 p-6 md:p-8">
-          {/* Section header */}
           <div className="flex items-center gap-2 mb-1">
             <Lock size={18} className="text-error" />
             <h2 className="text-lg font-bold text-error">
@@ -266,7 +350,23 @@ export default function ProfilePage() {
           <p className="text-error text-sm mb-6 font-medium">
             Hanya isi kolom di bawah ini jika Anda ingin mengganti password.
             Biarkan kosong untuk tetap menggunakan password lama.
+            <span className="block mt-1.5 text-text-muted text-xs font-normal">
+              *Kolom password baru akan terbuka setelah Anda memasukkan Password Lama dengan benar.
+            </span>
           </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+            <input type="text" autoComplete="username" className="hidden" />
+            <InputField
+              label="Password Lama"
+              icon={<Lock size={16} />}
+              value={form.passwordLama}
+              onChange={set("passwordLama")}
+              type="password"
+              placeholder="Masukkan password lama"
+              autoComplete="new-password"
+            />
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <InputField
@@ -276,6 +376,9 @@ export default function ProfilePage() {
               onChange={set("passwordBaru")}
               type="password"
               placeholder="Masukkan password baru"
+              autoComplete="new-password"
+              disabled={!form.passwordLama || storedPassword === null || form.passwordLama !== storedPassword}
+              error={errors.passwordBaru}
             />
             <InputField
               label="Konfirmasi Password"
@@ -284,25 +387,14 @@ export default function ProfilePage() {
               onChange={set("konfirmasiPassword")}
               type="password"
               placeholder="Konfirmasi password baru"
+              autoComplete="new-password"
+              disabled={!form.passwordLama || storedPassword === null || form.passwordLama !== storedPassword}
+              error={errors.konfirmasiPassword}
             />
           </div>
         </div>
-
-        {/* ── Action Buttons ── */}
-        <div className="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="
-              flex items-center gap-2 px-6 py-2.5
-              border border-border-strong rounded-lg
-              text-sm font-semibold text-text-heading
-              hover:bg-bg-hover transition-colors
-            "
-          >
-            <X size={15} />
-            Batal
-          </button>
+        =
+        <div className="flex items-center justify-end">
           <button
             type="button"
             onClick={handleSave}
@@ -319,8 +411,6 @@ export default function ProfilePage() {
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Menyimpan...
               </>
-            ) : saved ? (
-              <>✓ Tersimpan!</>
             ) : (
               <>
                 <Save size={15} />
