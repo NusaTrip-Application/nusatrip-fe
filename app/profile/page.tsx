@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
-import { User, Mail, Phone, Lock, Camera, Save, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Phone, Lock, Camera, Save, Eye, EyeOff, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { getMyProfile, updateMyProfile } from "@/services/auth";
 
 function InstagramIcon({ size = 16 }: { size?: number }) {
@@ -28,13 +28,13 @@ interface ProfileForm {
   konfirmasiPassword: string;
 }
 
-function AvatarUpload({ src, onChange }: { src: string; onChange: (url: string) => void; }) {
+function AvatarUpload({ src, onChange, onError }: { src: string; onChange: (url: string) => void; onError: (msg: string) => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      alert("Ukuran foto terlalu besar! Harap pilih foto di bawah 2MB.");
+      onError("Ukuran foto terlalu besar! Harap pilih foto di bawah 2MB.");
       e.target.value = "";
       return;
     }
@@ -98,6 +98,18 @@ export default function ProfilePage() {
     namaLengkap: "", email: "", nomorTelepon: "", socialMediaInstagram: "", passwordLama: "", passwordBaru: "", konfirmasiPassword: "",
   });
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileForm, string>>>({});
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" | "info" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
+    setToast({ show: true, message, type });
+  };
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -118,7 +130,7 @@ export default function ProfilePage() {
         }
       } catch (error) {
         console.error("Gagal mengambil data profil:", error);
-        alert("Sesi Anda mungkin telah habis. Silakan login kembali.");
+        showToast("Sesi Anda mungkin telah habis. Silakan login kembali.", "error");
         router.push("/login");
       } finally {
         setIsInitialLoading(false);
@@ -135,13 +147,16 @@ export default function ProfilePage() {
 
     if (form.namaLengkap.length < 3) newErrors.namaLengkap = "Nama lengkap minimal 3 karakter";
     if (form.nomorTelepon && !/^[+]?[\d\s-]{9,16}$/.test(form.nomorTelepon)) newErrors.nomorTelepon = "Format nomor telepon tidak valid";
-    if (form.passwordBaru) {
-      if (form.passwordBaru.length < 8) newErrors.passwordBaru = "Kata sandi minimal 8 karakter";
-      if (form.passwordBaru !== form.konfirmasiPassword) newErrors.konfirmasiPassword = "Kata sandi tidak cocok";
-    }
+    
+    // Password is now mandatory for any profile updates
+    if (!form.passwordLama) newErrors.passwordLama = "Password lama wajib diisi";
+    if (!form.passwordBaru) newErrors.passwordBaru = "Password baru wajib diisi";
+    if (form.passwordBaru && form.passwordBaru.length < 8) newErrors.passwordBaru = "Kata sandi minimal 8 karakter";
+    if (form.passwordBaru !== form.konfirmasiPassword) newErrors.konfirmasiPassword = "Kata sandi tidak cocok";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      showToast("Harap periksa kembali form Anda", "error");
       return;
     }
 
@@ -149,16 +164,22 @@ export default function ProfilePage() {
     setIsSaving(true);
 
     try {
-      await updateMyProfile({
+      const payload: any = {
         fullName: form.namaLengkap,
         phoneNumber: form.nomorTelepon,
         instagramUsername: form.socialMediaInstagram
-      });
+      };
+      
+      if (form.passwordBaru) {
+        payload.password = form.passwordBaru;
+      }
+
+      await updateMyProfile(payload);
 
       setForm(prev => ({ ...prev, passwordLama: "", passwordBaru: "", konfirmasiPassword: "" }));
-      alert("Perubahan profil berhasil disimpan ke server!");
+      showToast("Perubahan profil berhasil disimpan ke server!", "success");
     } catch (error: any) {
-      alert("Gagal menyimpan profil: " + (error.message || "Terjadi kesalahan."));
+      showToast("Gagal menyimpan profil: " + (error.message || "Terjadi kesalahan."), "error");
     } finally {
       setIsSaving(false);
     }
@@ -180,7 +201,7 @@ export default function ProfilePage() {
         <div className="bg-bg-surface border border-border-default rounded-xl shadow-sm mb-6 p-6 md:p-8">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="md:w-[220px] flex-shrink-0 border border-border-default rounded-xl bg-bg-soft-gray/40 flex items-center justify-center">
-              <AvatarUpload src={avatarSrc} onChange={setAvatarSrc} />
+              <AvatarUpload src={avatarSrc} onChange={setAvatarSrc} onError={(msg) => showToast(msg, "error")} />
             </div>
 
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -195,10 +216,10 @@ export default function ProfilePage() {
         <div className="bg-bg-surface border border-border-default rounded-xl shadow-sm mb-8 p-6 md:p-8">
           <div className="flex items-center gap-2 mb-1">
             <Lock size={18} className="text-error" />
-            <h2 className="text-lg font-bold text-error">Ubah Password (Opsional)</h2>
+            <h2 className="text-lg font-bold text-error">Konfirmasi & Ubah Password</h2>
           </div>
           <p className="text-error text-sm mb-6 font-medium">
-            Hanya isi kolom di bawah ini jika Anda ingin mengganti password.
+            Anda wajib memasukkan password lama dan password baru untuk menyimpan perubahan profil.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
@@ -225,6 +246,32 @@ export default function ProfilePage() {
 
       <Footer />
       <MobileNav />
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-6 right-6 z-[100] animate-in slide-in-from-top-5 fade-in duration-300">
+          <div className={`flex items-start gap-3 px-4 py-3.5 rounded-xl shadow-lg border min-w-[300px] max-w-[400px] bg-bg-surface ${toast.type === "success" ? "border-green-200" : toast.type === "error" ? "border-red-200" : "border-blue-200"}`}>
+            <div className="shrink-0 mt-0.5">
+              {toast.type === "success" ? (
+                <CheckCircle2 size={18} className="text-green-500" />
+              ) : toast.type === "error" ? (
+                <AlertCircle size={18} className="text-error" />
+              ) : (
+                <AlertCircle size={18} className="text-blue-500" />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className={`text-[13px] font-bold mb-0.5 ${toast.type === "success" ? "text-green-700" : toast.type === "error" ? "text-red-700" : "text-blue-700"}`}>
+                {toast.type === "success" ? "Berhasil" : toast.type === "error" ? "Terjadi Kesalahan" : "Info"}
+              </p>
+              <p className="text-text-body text-[13px] leading-relaxed pr-2">{toast.message}</p>
+            </div>
+            <button onClick={() => setToast(null)} className="shrink-0 text-text-muted hover:text-text-heading transition-colors bg-bg-soft-gray hover:bg-bg-hover rounded-full p-1 mt-0.5">
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
