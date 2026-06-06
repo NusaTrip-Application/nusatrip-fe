@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { useState, useEffect, useRef, Suspense } from "react";
+import { getMyProfile } from "@/services/auth";
 
 function HeaderSearchInput() {
   const router = useRouter();
@@ -76,7 +77,9 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
       label: "Log Out",
       danger: false,
       onClick: () => {
-        // clear auth then redirect
+        localStorage.removeItem("token");
+        localStorage.removeItem("nusatrip_user");
+        alert("Anda berhasil keluar.");
         router.push("/login");
         onClose();
       },
@@ -138,25 +141,40 @@ export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const [userName, setUserName] = useState("Andi Wijaya");
   const [userAvatar, setUserAvatar] = useState(
     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
   );
 
-  useEffect(() => {
-    const loadUser = () => {
-      const userStr = localStorage.getItem("nusatrip_user");
-      if (userStr) {
+useEffect(() => {
+    const fetchUserAndStatus = async () => {
+      const token = localStorage.getItem("token");
+
+      if (token) {
+        setIsLoggedIn(true);
+
         try {
-          const user = JSON.parse(userStr);
-          if (user.namaLengkap) setUserName(user.namaLengkap);
-          if (user.avatarSrc) setUserAvatar(user.avatarSrc);
-        } catch (e) { }
+          const response = await getMyProfile();
+          const userData = response.data;
+
+          if (userData.fullName) setUserName(userData.fullName);
+          if (userData.profilePhotoUrl) setUserAvatar(userData.profilePhotoUrl);
+
+        } catch (error) {
+          console.error("Gagal mengambil data profil di Header:", error);
+          localStorage.removeItem("token");
+          setIsLoggedIn(false);
+        }
+      } else {
+        setIsLoggedIn(false);
       }
     };
-    loadUser();
-    window.addEventListener("user-updated", loadUser);
-    return () => window.removeEventListener("user-updated", loadUser);
+    fetchUserAndStatus();
+
+    window.addEventListener("user-updated", fetchUserAndStatus);
+    return () => window.removeEventListener("user-updated", fetchUserAndStatus);
   }, []);
 
   useEffect(() => {
@@ -239,33 +257,51 @@ export default function Header() {
           <Bell size={20} />
         </button>
 
-        <div ref={dropdownRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setDropdownOpen((v) => !v)}
-            className="flex items-center gap-2 md:gap-3 cursor-pointer group"
-          >
-            <img
-              src={userAvatar}
-              alt={userName}
-              className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-sm ring-1 ring-border-default"
-            />
-            <div className="hidden lg:flex items-center gap-1">
-              <span className="text-sm font-semibold text-text-heading group-hover:text-brand-primary transition-colors">
-                {userName}
-              </span>
-              <ChevronDown
-                size={14}
-                className={`text-text-muted transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""
-                  }`}
+        {isLoggedIn ? (
+          <div ref={dropdownRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setDropdownOpen((v) => !v)}
+              className="flex items-center gap-2 md:gap-3 cursor-pointer group"
+            >
+              <img
+                src={userAvatar}
+                alt={userName}
+                className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-sm ring-1 ring-border-default"
               />
-            </div>
-          </button>
+              <div className="hidden lg:flex items-center gap-1">
+                <span className="text-sm font-semibold text-text-heading group-hover:text-brand-primary transition-colors">
+                  {userName}
+                </span>
+                <ChevronDown
+                  size={14}
+                  className={`text-text-muted transition-transform duration-200 ${
+                    dropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
+            </button>
 
-          {dropdownOpen && (
-            <ProfileDropdown onClose={() => setDropdownOpen(false)} />
-          )}
-        </div>
+            {dropdownOpen && (
+              <ProfileDropdown onClose={() => setDropdownOpen(false)} />
+            )}
+          </div>
+        ) : (
+          <div className="hidden lg:flex items-center gap-3">
+             <Link 
+               href="/login" 
+               className="px-4 py-2 text-sm font-semibold text-brand-primary border border-brand-primary rounded-md hover:bg-brand-primary/10 transition-colors"
+             >
+               Masuk
+             </Link>
+             <Link 
+               href="/register" 
+               className="px-4 py-2 text-sm font-semibold text-white bg-brand-primary rounded-md hover:bg-brand-primary-hover transition-colors"
+             >
+               Daftar
+             </Link>
+          </div>
+        )}
       </div>
     </header>
   );

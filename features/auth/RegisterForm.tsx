@@ -7,11 +7,14 @@ import { MapPin, Eye, EyeOff, Mail, Lock, User, RefreshCw } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, RegisterFormValues } from "@/lib/validations/auth";
+import { registerUser } from "@/services/auth";
 
 export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
 
   const {
     register,
@@ -22,15 +25,29 @@ export default function RegisterForm() {
     mode: "onChange",
   });
 
-  const onSubmit = (data: RegisterFormValues) => {
-    console.log("Data Register Valid:", data);
-    localStorage.setItem("nusatrip_user", JSON.stringify({
-      namaLengkap: data.fullName,
-      email: data.email,
-      password: data.password,
-    }));
-    alert("Pendaftaran sukses! Mengarahkan ke halaman Login...");
-    router.push("/login");
+  const onSubmit = async (data: RegisterFormValues) => {
+    setIsLoading(true);
+    setApiError("");
+
+    try {
+      await registerUser({
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password
+      });
+      
+      alert("Pendaftaran berhasil! Silakan login dengan akun baru Anda.");
+      router.push("/login");
+    } catch (error: any) {
+      console.log("Error detail:", error);
+      
+      const message = error.message || 
+                      (error.errors && Object.values(error.errors)[0]) || 
+                      "Gagal melakukan pendaftaran. Silakan coba lagi.";
+      setApiError(message.toString());
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -62,6 +79,12 @@ export default function RegisterForm() {
         <div className="m-auto w-full max-w-[420px] flex-1 flex flex-col justify-center py-8">
           <h2 className="text-[32px] font-bold leading-[1.3] -tracking-[0.01em] text-text-heading mb-1.5">Buat Akun Baru</h2>
           <p className="text-sm font-medium leading-[1.5] text-text-body mb-8">Lengkapi data di bawah ini untuk memulai perjalanan Anda.</p>
+
+          {apiError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm font-medium">
+              {apiError}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
@@ -149,8 +172,12 @@ export default function RegisterForm() {
               {errors.terms && <p className="text-error text-xs mt-1.5 font-medium">{errors.terms.message}</p>}
             </div>
 
-            <button type="submit" className="w-full bg-brand-primary hover:bg-brand-primary-hover text-text-light font-semibold py-3.5 rounded-md transition-colors mt-2 text-sm shadow-sm">
-              Daftar Sekarang
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="w-full bg-brand-primary hover:bg-brand-primary-hover text-text-light font-semibold py-3.5 rounded-md transition-colors mt-2 text-sm shadow-sm disabled:opacity-70"
+            >
+              {isLoading ? "Memproses..." : "Daftar Sekarang"}
             </button>
           </form>
 
