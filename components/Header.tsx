@@ -1,9 +1,3 @@
-// components/Header.tsx  (UPDATED — drop-in replacement)
-// ============================================================
-// NusaTrip — Header with Profile Dropdown
-// Stack: Next.js + TypeScript + Tailwind CSS v4
-// ============================================================
-
 "use client";
 
 import {
@@ -19,8 +13,8 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { useState, useEffect, useRef, Suspense } from "react";
+import { getMyProfile, logoutUser } from "@/services/auth";
 
-// ── Search input (kept in Suspense because it reads searchParams) ────────────
 function HeaderSearchInput() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,7 +48,6 @@ function HeaderSearchInput() {
   );
 }
 
-// ── Profile Dropdown ─────────────────────────────────────────────────────────
 interface DropdownItem {
   icon: React.ReactNode;
   label: string;
@@ -83,8 +76,12 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
       icon: <LogOut size={16} />,
       label: "Log Out",
       danger: false,
-      onClick: () => {
-        // clear auth then redirect
+      onClick: async () => {
+        try {
+          await logoutUser();
+        } catch {
+          // ignore API errors — token is already cleared by logoutUser
+        }
         router.push("/login");
         onClose();
       },
@@ -92,13 +89,6 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
   ];
 
   return (
-    /*
-      Pixel-perfect match to "Dropdown Profile.png":
-      - white card, rounded-xl, shadow-lg
-      - 180px wide, sits below avatar
-      - active item = brand-primary bg + white text
-      - dividers between items
-    */
     <div
       className="
         absolute right-0 top-[calc(100%+10px)] z-50
@@ -119,10 +109,9 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
               className={`
                 flex items-center gap-2.5 px-4 py-3 text-sm font-semibold
                 transition-colors
-                ${
-                  item.active
-                    ? "bg-brand-primary text-white"
-                    : "text-text-heading hover:bg-bg-hover"
+                ${item.active
+                  ? "bg-brand-primary text-white"
+                  : "text-text-heading hover:bg-bg-hover"
                 }
               `}
             >
@@ -149,13 +138,47 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ── Header ───────────────────────────────────────────────────────────────────
 export default function Header() {
   const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const [userName, setUserName] = useState("Andi Wijaya");
+  const [userAvatar, setUserAvatar] = useState(
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+  );
+
+useEffect(() => {
+    const fetchUserAndStatus = async () => {
+      const token = localStorage.getItem("token");
+
+      if (token) {
+        setIsLoggedIn(true);
+
+        try {
+          const response = await getMyProfile();
+          const userData = response.data;
+
+          if (userData.fullName) setUserName(userData.fullName);
+          if (userData.profilePhotoUrl) setUserAvatar(userData.profilePhotoUrl);
+
+        } catch (error) {
+          console.error("Gagal mengambil data profil di Header:", error);
+          localStorage.removeItem("token");
+          setIsLoggedIn(false);
+        }
+      } else {
+        setIsLoggedIn(false);
+      }
+    };
+    fetchUserAndStatus();
+
+    window.addEventListener("user-updated", fetchUserAndStatus);
+    return () => window.removeEventListener("user-updated", fetchUserAndStatus);
+  }, []);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (
@@ -177,7 +200,6 @@ export default function Header() {
 
   return (
     <header className="flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-bg-surface border-b border-border-default sticky top-0 z-50">
-      {/* ── Left: Logo ── */}
       <div className="flex items-center gap-3">
         <button className="lg:hidden text-text-body hover:text-text-heading transition-colors">
           <Menu size={24} />
@@ -190,7 +212,6 @@ export default function Header() {
         </Link>
       </div>
 
-      {/* ── Center: Nav ── */}
       <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold text-text-body">
         {navLinks.map(({ href, label }) => {
           const active =
@@ -201,11 +222,10 @@ export default function Header() {
             <Link
               key={href}
               href={href}
-              className={`pb-1 transition-colors ${
-                active
+              className={`pb-1 transition-colors ${active
                   ? "text-brand-primary border-b-2 border-brand-primary"
                   : "hover:text-brand-primary-hover"
-              }`}
+                }`}
             >
               {label}
             </Link>
@@ -213,9 +233,7 @@ export default function Header() {
         })}
       </nav>
 
-      {/* ── Right: Search + Bell + User ── */}
       <div className="flex items-center gap-3 md:gap-4">
-        {/* Search — desktop only */}
         <div className="hidden lg:block">
           <Suspense
             fallback={
@@ -237,40 +255,55 @@ export default function Header() {
           </Suspense>
         </div>
 
-        {/* Bell */}
         <button className="text-text-body hover:text-brand-primary transition-colors">
           <Bell size={20} />
         </button>
 
-        {/* ── Profile Button + Dropdown ── */}
-        <div ref={dropdownRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setDropdownOpen((v) => !v)}
-            className="flex items-center gap-2 md:gap-3 cursor-pointer group"
-          >
-            <img
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
-              alt="Andi Wijaya"
-              className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-sm ring-1 ring-border-default"
-            />
-            <div className="hidden lg:flex items-center gap-1">
-              <span className="text-sm font-semibold text-text-heading group-hover:text-brand-primary transition-colors">
-                Andi Wijaya
-              </span>
-              <ChevronDown
-                size={14}
-                className={`text-text-muted transition-transform duration-200 ${
-                  dropdownOpen ? "rotate-180" : ""
-                }`}
+        {isLoggedIn ? (
+          <div ref={dropdownRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setDropdownOpen((v) => !v)}
+              className="flex items-center gap-2 md:gap-3 cursor-pointer group"
+            >
+              <img
+                src={userAvatar}
+                alt={userName}
+                className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-sm ring-1 ring-border-default"
               />
-            </div>
-          </button>
+              <div className="hidden lg:flex items-center gap-1">
+                <span className="text-sm font-semibold text-text-heading group-hover:text-brand-primary transition-colors">
+                  {userName}
+                </span>
+                <ChevronDown
+                  size={14}
+                  className={`text-text-muted transition-transform duration-200 ${
+                    dropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
+            </button>
 
-          {dropdownOpen && (
-            <ProfileDropdown onClose={() => setDropdownOpen(false)} />
-          )}
-        </div>
+            {dropdownOpen && (
+              <ProfileDropdown onClose={() => setDropdownOpen(false)} />
+            )}
+          </div>
+        ) : (
+          <div className="hidden lg:flex items-center gap-3">
+             <Link 
+               href="/login" 
+               className="px-4 py-2 text-sm font-semibold text-brand-primary border border-brand-primary rounded-md hover:bg-brand-primary/10 transition-colors"
+             >
+               Masuk
+             </Link>
+             <Link 
+               href="/register" 
+               className="px-4 py-2 text-sm font-semibold text-white bg-brand-primary rounded-md hover:bg-brand-primary-hover transition-colors"
+             >
+               Daftar
+             </Link>
+          </div>
+        )}
       </div>
     </header>
   );

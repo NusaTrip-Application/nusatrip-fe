@@ -7,9 +7,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { loginSchema, LoginFormValues } from "@/lib/validations/auth";
+import { loginUser } from "@/services/auth";
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
+  
   const router = useRouter();
 
   const {
@@ -20,10 +24,23 @@ export default function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (data: LoginFormValues) => {
-    console.log("Data Login Valid:", data);
-    alert("Login sukses! Mengarahkan ke halaman Home...");
-    router.push("/");
+  const onSubmit = async (payload: LoginFormValues) => {
+    setIsLoading(true);
+    setApiError("");
+
+    try {
+      const response = await loginUser(payload);
+
+      if (response.data && response.data.accessToken) {
+        localStorage.setItem("token", response.data.accessToken);
+        
+        router.push("/");
+      }
+    } catch (error: any) {
+      setApiError(error.message || "Email atau kata sandi salah.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -59,6 +76,12 @@ export default function LoginForm() {
           <p className="text-sm font-medium leading-[1.5] text-text-body mb-8">
             Silakan masuk ke akun Anda untuk melanjutkan reservasi.
           </p>
+
+          {apiError && (
+            <div className="mb-5 p-3 bg-error/10 border border-error/20 rounded-md text-error text-sm font-medium">
+              {apiError}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
@@ -106,8 +129,12 @@ export default function LoginForm() {
               <label htmlFor="remember" className="text-sm font-medium text-text-body cursor-pointer">Ingat saya di perangkat ini</label>
             </div>
 
-            <button type="submit" className="w-full bg-brand-primary hover:bg-brand-primary-hover text-text-light font-semibold py-3.5 rounded-md transition-colors text-sm shadow-sm mt-2">
-              Masuk →
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="w-full bg-brand-primary hover:bg-brand-primary-hover text-text-light font-semibold py-3.5 rounded-md transition-colors text-sm shadow-sm mt-2 disabled:opacity-70"
+            >
+              {isLoading ? "Memproses..." : "Masuk →"}
             </button>
           </form>
 

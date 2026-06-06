@@ -1,16 +1,101 @@
-export async function getRecommendationsByDestination(destination: string) {
+import api from '@/lib/axios';
+
+export interface CreateItineraryPayload {
+  title: string;
+  locationId: string;
+  startDate: string;
+  endDate: string;
+  travelerCount: number;
+  budgetPreference: number;
+  interestSummary?: string[];
+}
+
+export interface ItineraryItem {
+  placeId: string;
+  visitDate: string;
+  visitTime: string;
+  notes?: string;
+}
+
+export async function getLocationOptions() {
   try {
-    // Menyesuaikan URL nnti
-    const response = await fetch(`http://localhost:5000/api/recommendations?destination=${destination}`);
-    
-    if (!response.ok) {
-      throw new Error("Gagal mengambil data dari server");
-    }
-    
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error pada getRecommendationsByDestination:", error);
-    throw error;
+    const response = await api.get('/locations/options');
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function getPlaceCategories() {
+  try {
+    const response = await api.get('/places/categories');
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function createItinerary(payload: CreateItineraryPayload) {
+  try {
+    const response = await api.post('/itineraries', payload);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function getMyItineraries(params?: { page?: number; limit?: number }) {
+  try {
+    const response = await api.get('/itineraries', { params });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function getItineraryById(itineraryId: string) {
+  try {
+    const response = await api.get(`/itineraries/${itineraryId}`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function updateItinerary(itineraryId: string, payload: Partial<CreateItineraryPayload> & { visibilityStatus?: string }) {
+  try {
+    const response = await api.patch(`/itineraries/${itineraryId}`, payload);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function deleteItinerary(itineraryId: string) {
+  try {
+    const response = await api.delete(`/itineraries/${itineraryId}`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function addItineraryItem(itineraryId: string, payload: ItineraryItem) {
+  try {
+    const response = await api.post(`/itineraries/${itineraryId}/items`, payload);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function getRecommendationsByDestination(locationId: string) {
+  try {
+    const response = await api.get('/places/recommendations', {
+      params: { locationId },
+    });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
   }
 }
