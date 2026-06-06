@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Search, Calendar, Wallet, Star, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
@@ -200,12 +201,12 @@ export default function CommunityPage() {
                       {item.author.name}
                     </span>
                   </div>
-                  <a
-                    href="#"
+                  <Link
+                    href={`/community/${item.id}`}
                     className="text-sm font-semibold text-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary-hover)] transition-colors"
                   >
                     View Details
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
