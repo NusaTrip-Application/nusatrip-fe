@@ -102,7 +102,7 @@ export default function CreatePlanForm() {
 
       alert("Setup Rencana Perjalanan berhasil!");
 
-      router.push(`/my-plans/create/recommendation?tripId=${newTripId}`);
+      router.push(`/my-plans/recommendation?tripId=${newTripId}`);
       
     } catch (error: any) {
       setApiError(error.message || "Gagal membuat rencana perjalanan. Periksa kembali isian Anda.");

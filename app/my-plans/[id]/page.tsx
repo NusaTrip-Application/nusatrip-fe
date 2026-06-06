@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Users, MapPin, Plus, Map, Settings, MoreVertical, Star, X, Edit2, Trash2, AlertTriangle } from "lucide-react";
+import { Calendar, Users, MapPin, Plus, Map, Settings, MoreVertical, Star, X, Edit2, Trash2, AlertTriangle, Loader2, ChevronLeft } from "lucide-react";
 import Header from "@/components/Header";
+import { getItineraryById, updateItineraryItem, deleteItineraryItem, updateItineraryBudget } from "@/services/plans";
 
 const generateTimeOptions = () => {
   const times = [];
@@ -25,7 +26,10 @@ const generateTripDates = (startDate: string, endDate: string) => {
       day: 'numeric',
       month: 'short'
     });
-    dates.push(formattedDate);
+    dates.push({
+      label: formattedDate,
+      value: currentDate.toISOString().split('T')[0]
+    });
     currentDate.setDate(currentDate.getDate() + 1);
   }
   return dates;
@@ -43,9 +47,10 @@ const formatTripRange = (startStr: string, endStr: string) => {
   return `${startFormatted} - ${endFormatted}`;
 };
 
-const parsePriceToNumber = (priceStr: string) => {
-  if (!priceStr || priceStr.toLowerCase().includes("free")) return 0;
-  const cleanStr = priceStr.replace(/[^0-9-]/g, "");
+const parsePriceToNumber = (priceVal: string | number) => {
+  if (typeof priceVal === 'number') return priceVal;
+  if (!priceVal || String(priceVal).toLowerCase().includes("free")) return 0;
+  const cleanStr = String(priceVal).replace(/[^0-9-]/g, "");
   const priceArray = cleanStr.split("-");
 
   const maxPrice = priceArray.length > 1 ? parseInt(priceArray[1]) : parseInt(priceArray[0]);
@@ -76,27 +81,71 @@ export default function ManageTripPage() {
   const [editNotes, setEditNotes] = useState("");
   const [editDate, setEditDate] = useState("");
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [editBudgetAmount, setEditBudgetAmount] = useState("");
+  const [rawData, setRawData] = useState<any>(null);
+
   const timeOptions = generateTimeOptions();
 
-  useEffect(() => {
-    const savedPlan = localStorage.getItem(`plan_${id}`);
-    if (savedPlan) {
-      const parsedPlan = JSON.parse(savedPlan);
-      setTripData(parsedPlan);
+  const fetchItinerary = async () => {
+    try {
+      setIsLoading(true);
+      let res = await getItineraryById(id as string);
+      const data = res.data || res;
+      
+      const locName = data.location?.name || data.location?.locationName || "Destinasi";
+      
+      setTripData({
+        title: data.title || "Untitled Plan",
+        destination: locName,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        pax: data.travelerCount || 1,
+        budget: data.estimatedTotalBudget || data.budgetPreference || 7000000,
+        isPublic: data.visibilityStatus === "PUBLISHED" || data.visibilityStatus === "PUBLIC",
+        bannerImage: (data.bannerPhotoUrl || data.bannerImageUrl) ? ((data.bannerPhotoUrl || data.bannerImageUrl).startsWith('http') ? (data.bannerPhotoUrl || data.bannerImageUrl) : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${data.bannerPhotoUrl || data.bannerImageUrl}`) : "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&auto=format&fit=crop&q=80"
+      });
 
-      const dates = generateTripDates(parsedPlan.startDate, parsedPlan.endDate);
+      const dates = generateTripDates(data.startDate, data.endDate);
       if (dates.length > 0 && !activeDate) {
-        setActiveDate(dates[0]);
+        setActiveDate(dates[0].value);
       }
-    }
+      
+      let items: any[] = [];
+      if (data.itineraryItemsByDay) {
+        Object.values(data.itineraryItemsByDay).forEach((dayItems: any) => {
+          if (Array.isArray(dayItems)) items.push(...dayItems);
+        });
+      } else if (data.items || data.itineraryItems) {
+        items = data.items || data.itineraryItems || [];
+      }
+      const parsedItems = items.map((item: any) => ({
+        id: item.itineraryItemId || item.id,
+        time: item.visitTime || item.time,
+        date: item.visitDate ? new Date(item.visitDate).toISOString().split('T')[0] : item.date,
+        title: item.place?.placeName || item.place?.name || item.title || "Unknown Place",
+        subtitle: item.place?.address || item.subtitle || "",
+        category: item.place?.categories?.[0]?.categoryName || item.category || "General",
+        rating: item.place?.ratingValue || item.rating || 4.5,
+        img: item.place?.image?.imageUrl || item.place?.coverImage || item.img || "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=500&auto=format&fit=crop&q=60",
+        notes: item.notes || "",
+        price: item.place?.priceMax || item.price || 0
+      }));
 
-    const savedData = localStorage.getItem(`itinerary_${id}`);
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      parsedData.sort((a: any, b: any) => a.time.localeCompare(b.time));
-      setTimelineData(parsedData);
+      parsedItems.sort((a: any, b: any) => a.time.localeCompare(b.time));
+      setTimelineData(parsedItems);
+    } catch (error) {
+      console.error("Gagal memuat detail rencana:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [id, activeDate]);
+  };
+
+  useEffect(() => {
+    fetchItinerary();
+  }, [id]);
 
   const currentDayTimeline = timelineData.filter((item) => item.date === activeDate);
 
@@ -107,43 +156,95 @@ export default function ManageTripPage() {
 
   const remainingBudget = tripData.budget - totalSpent;
 
-  const handleDeleteConfirm = () => {
-    const newData = timelineData.filter((item) => item.id !== itemToDelete.id);
-    setTimelineData(newData);
-    localStorage.setItem(`itinerary_${id}`, JSON.stringify(newData));
-    setItemToDelete(null);
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return;
+    try {
+      setIsSaving(true);
+      await deleteItineraryItem(id as string, itemToDelete.id);
+      await fetchItinerary();
+      setItemToDelete(null);
+    } catch (e: any) {
+      alert(e.message || "Gagal menghapus item");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleOpenEdit = (item: any) => {
     setItemToEdit(item);
     setEditTime(item.time);
     setEditNotes(item.notes);
-    setEditDate(item.date || tripDates[0]);
+    setEditDate(item.date || (tripDates[0] ? tripDates[0].value : ""));
   };
 
-  const handleSaveEdit = () => {
-    const newData = timelineData.map((item) => {
-      if (item.id === itemToEdit.id) {
-        return { ...item, time: editTime, notes: editNotes, date: editDate };
-      }
-      return item;
-    });
-
-    newData.sort((a: any, b: any) => a.time.localeCompare(b.time));
-    setTimelineData(newData);
-    localStorage.setItem(`itinerary_${id}`, JSON.stringify(newData));
-    setItemToEdit(null);
+  const handleSaveEdit = async () => {
+    if (!itemToEdit) return;
+    try {
+      setIsSaving(true);
+      await updateItineraryItem(id as string, itemToEdit.id, {
+        visitTime: editTime,
+        notes: editNotes,
+        visitDate: new Date(editDate).toISOString()
+      });
+      await fetchItinerary();
+      setItemToEdit(null);
+    } catch (e: any) {
+      alert(e.message || "Gagal menyimpan perubahan");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  const handleSaveBudget = async () => {
+    try {
+      setIsSaving(true);
+      const newBudget = parseInt(editBudgetAmount.replace(/[^0-9]/g, "")) || 0;
+      await updateItineraryBudget(id as string, newBudget);
+      await fetchItinerary();
+      setIsEditingBudget(false);
+    } catch (e: any) {
+      alert(e.message || "Gagal menyimpan budget");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-bg-main font-sans flex flex-col">
+        <Header />
+        <div className="flex-grow flex flex-col items-center justify-center">
+          <Loader2 size={32} className="animate-spin text-brand-primary mb-4" />
+          <p className="text-text-muted font-medium">Memuat rencana perjalanan...</p>
+        </div>
+        {/* MobileNav not strictly required but adding it for consistency if needed, wait, it wasn't there before */}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg-main font-sans pb-20">
       <Header />
 
       <div className="relative w-full h-[280px] md:h-[320px]">
-        <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&auto=format&fit=crop&q=80" alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={tripData.bannerImage} alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
         <div className="relative z-10 max-w-[1200px] mx-auto px-4 md:px-8 h-full flex flex-col justify-end pb-10 text-white">
-          <p className="text-[12px] md:text-[13px] font-medium opacity-80 mb-2">My Plans &gt; {tripData.title}</p>
+          <div className="text-[12px] md:text-[13px] font-medium mb-2 flex items-center gap-1 opacity-90">
+            {/* Mobile View: Back Button Only */}
+            <Link href="/my-plans" className="md:hidden flex items-center justify-center p-1 -ml-2 hover:bg-white/20 rounded-full transition-colors">
+              <ChevronLeft size={28} className="text-white" />
+            </Link>
+
+            {/* Desktop View: Full Breadcrumb */}
+            <div className="hidden md:flex items-center gap-1">
+              <Link href="/my-plans" className="hover:underline hover:text-white transition-colors">
+                My Plans
+              </Link>
+              <span className="text-white/70"> &gt; </span>
+              <span className="text-white/70 truncate max-w-[300px]">{tripData.title}</span>
+            </div>
+          </div>
           <h1 className="text-[32px] md:text-[40px] font-serif font-bold leading-tight mb-4">
             {tripData.title}
           </h1>
@@ -161,15 +262,55 @@ export default function ManageTripPage() {
           <div className="w-full md:w-64 shrink-0 flex flex-col gap-6">
             <div className="bg-bg-surface border border-border-default rounded-2xl p-3 flex flex-col gap-1 shadow-sm">
               <SidebarItem icon={<Map size={18} />} label="View Itinerary" active />
-              <SidebarItem icon={<Users size={18} />} label="Community" href={`/my-plans/${id}/community`} />
+              {tripData.isPublic && (
+                <SidebarItem icon={<Users size={18} />} label="Community" href={`/my-plans/${id}/community`} />
+              )}
               <SidebarItem icon={<Settings size={18} />} label="Settings" href={`/my-plans/${id}/settings`} />
             </div>
 
             <div className="bg-brand-primary text-white p-6 rounded-2xl shadow-sm">
-              <h3 className="font-serif font-bold text-[18px] mb-5">Trip Budgeting</h3>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-serif font-bold text-[18px]">Trip Budgeting</h3>
+                {!isEditingBudget && (
+                  <button onClick={() => { setIsEditingBudget(true); setEditBudgetAmount(String(tripData.budget)); }} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">
+                    <Edit2 size={16} />
+                  </button>
+                )}
+              </div>
               <div className="mb-4">
                 <p className="text-[12px] opacity-80 font-medium mb-1">Jumlah Anggaran</p>
-                <p className="font-bold text-[16px]">Rp {Number(tripData.budget).toLocaleString("id-ID")}</p>
+                {isEditingBudget ? (
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="relative flex-grow">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-primary font-bold text-[14px]">Rp</span>
+                      <input 
+                        type="text" 
+                        value={editBudgetAmount ? Number(String(editBudgetAmount).replace(/[^0-9]/g, "")).toLocaleString("id-ID") : ""}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9]/g, "");
+                          setEditBudgetAmount(val);
+                        }}
+                        className="w-full bg-white text-text-heading rounded-lg pl-9 pr-3 py-2 text-[14px] font-bold focus:outline-none focus:ring-2 focus:ring-white/50"
+                        placeholder="0"
+                      />
+                    </div>
+                    <button 
+                      onClick={handleSaveBudget}
+                      disabled={isSaving}
+                      className="bg-brand-warm text-brand-primary px-3 py-2 rounded-lg text-[13px] font-bold hover:bg-brand-warm/90 transition-colors disabled:opacity-50"
+                    >
+                      {isSaving ? <Loader2 size={16} className="animate-spin" /> : "Simpan"}
+                    </button>
+                    <button 
+                      onClick={() => setIsEditingBudget(false)}
+                      className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ) : (
+                  <p className="font-bold text-[16px]">Rp {Number(tripData.budget).toLocaleString("id-ID")}</p>
+                )}
               </div>
               <div className="pt-4 border-t border-white/20">
                 <p className="text-[12px] opacity-80 font-medium mb-1">Anggaran Tersisa</p>
@@ -180,21 +321,21 @@ export default function ManageTripPage() {
             </div>
           </div>
 
-          <div className="flex-grow">
+          <div className="flex-grow min-w-0">
 
             <div className="flex gap-3 overflow-x-auto pb-4 mb-6 hide-scrollbar">
-              {tripDates.map((date, index) => (
+              {tripDates.map((dateObj, index) => (
                 <button
-                  key={date}
-                  onClick={() => setActiveDate(date)}
-                  className={`flex flex-col items-center justify-center min-w-[80px] py-2.5 rounded-xl border transition-colors ${activeDate === date
+                  key={dateObj.value}
+                  onClick={() => setActiveDate(dateObj.value)}
+                  className={`flex flex-col items-center justify-center min-w-[80px] py-2.5 rounded-xl border transition-colors ${activeDate === dateObj.value
                     ? 'bg-brand-primary text-white border-brand-primary'
                     : 'bg-bg-surface text-text-heading border-border-default hover:bg-bg-hover'
                     }`}
                 >
                   <span className="text-[14px] font-bold">Hari {index + 1}</span>
-                  <span className={`text-[11px] font-medium ${activeDate === date ? 'text-white/80' : 'text-text-muted'}`}>
-                    {date.split(',')[1]}
+                  <span className={`text-[11px] font-medium ${activeDate === dateObj.value ? 'text-white/80' : 'text-text-muted'}`}>
+                    {dateObj.label.split(',')[1]}
                   </span>
                 </button>
               ))}
@@ -202,7 +343,7 @@ export default function ManageTripPage() {
 
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-[24px] font-serif font-bold text-text-heading">
-                Hari {tripDates.indexOf(activeDate) + 1}
+                Hari {tripDates.findIndex(d => d.value === activeDate) + 1}
               </h2>
 
               <Link
@@ -243,8 +384,10 @@ export default function ManageTripPage() {
             <h3 className="font-bold text-[18px] text-text-heading text-center mb-2">Hapus Item Jadwal?</h3>
             <p className="text-[13px] text-text-muted text-center mb-6">Anda yakin ingin menghapus <b>{itemToDelete.title}</b> dari rencana?</p>
             <div className="flex gap-3">
-              <button onClick={() => setItemToDelete(null)} className="flex-1 py-2.5 border border-border-strong text-text-heading font-bold text-[14px] rounded-xl hover:bg-bg-hover">Batal</button>
-              <button onClick={handleDeleteConfirm} className="flex-1 bg-error hover:bg-red-600 text-white font-bold text-[14px] py-2.5 rounded-xl">Hapus</button>
+              <button onClick={() => setItemToDelete(null)} disabled={isSaving} className="flex-1 py-2.5 border border-border-strong text-text-heading font-bold text-[14px] rounded-xl hover:bg-bg-hover">Batal</button>
+              <button onClick={handleDeleteConfirm} disabled={isSaving} className="flex-1 bg-error hover:bg-red-600 text-white font-bold text-[14px] py-2.5 rounded-xl flex justify-center items-center gap-2">
+                {isSaving ? <Loader2 size={16} className="animate-spin" /> : "Hapus"}
+              </button>
             </div>
           </div>
         </div>
@@ -274,8 +417,8 @@ export default function ManageTripPage() {
                   onChange={(e) => setEditDate(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-lg border border-border-default bg-bg-surface text-[14px] font-medium focus:ring-1 focus:ring-brand-primary outline-none"
                 >
-                  {tripDates.map((date, idx) => (
-                    <option key={idx} value={date}>{date}</option>
+                  {tripDates.map((dateObj, idx) => (
+                    <option key={idx} value={dateObj.value}>{dateObj.label}</option>
                   ))}
                 </select>
               </div>
@@ -305,8 +448,10 @@ export default function ManageTripPage() {
             </div>
 
             <div className="flex gap-3">
-              <button onClick={() => setItemToEdit(null)} className="flex-1 py-2.5 border border-border-strong text-text-heading font-bold text-[14px] rounded-xl hover:bg-bg-hover">Cancel</button>
-              <button onClick={handleSaveEdit} className="flex-1 bg-brand-primary hover:bg-brand-primary-hover text-text-light font-bold text-[14px] py-2.5 rounded-xl">Simpan</button>
+              <button onClick={() => setItemToEdit(null)} disabled={isSaving} className="flex-1 py-2.5 border border-border-strong text-text-heading font-bold text-[14px] rounded-xl hover:bg-bg-hover">Batal</button>
+              <button onClick={handleSaveEdit} disabled={isSaving} className="flex-1 bg-brand-primary hover:bg-brand-primary-hover text-text-light font-bold text-[14px] py-2.5 rounded-xl flex justify-center items-center gap-2">
+                {isSaving ? <Loader2 size={16} className="animate-spin" /> : "Simpan"}
+              </button>
             </div>
           </div>
         </div>

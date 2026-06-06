@@ -3,109 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Users, MapPin, Map, Settings, Star, Bookmark, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Users, MapPin, Map, Settings, Star, Bookmark, MessageSquare, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
-
-const mockReviews = [
-  {
-    id: 1,
-    name: "Siti Aminah",
-    time: "2 jam yang lalu",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=60",
-    comment: "Itinerary Bandung Getaway ini sangat membantu! Pemilihan tempat makannya sangat authentic dan tidak terlalu mainstream. Saya paling suka rekomendasi kopi di Lembang-nya."
-  },
-  {
-    id: 2,
-    name: "Budi Santoso",
-    time: "5 jam yang lalu",
-    rating: 4,
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60",
-    comment: "Sangat detail untuk perjalanan keluarga. Mungkin bisa ditambah sedikit opsi tempat parkir di area Braga agar lebih lengkap. Secara keseluruhan sangat bagus!"
-  },
-  {
-    id: 3,
-    name: "Indah Permata",
-    time: "Kemarin",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60",
-    comment: "Terima kasih sudah berbagi rencana ini! Saya simpan untuk liburan akhir tahun nanti bersama teman-teman kantor."
-  },
-  {
-    id: 4,
-    name: "Reza Rahadian",
-    time: "Kemarin",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60",
-    comment: "Susunan jadwalnya masuk akal dan rutenya searah, jadi tidak buang waktu di jalan. Recommended banget buat yang baru pertama kali ke Bandung."
-  },
-  {
-    id: 5,
-    name: "Ahmad Fauzi",
-    time: "2 hari yang lalu",
-    rating: 4,
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=60",
-    comment: "Cukup bagus untuk referensi, tapi saya mengubah beberapa restoran karena lebih suka makanan pedas. Sisanya oke."
-  },
-  {
-    id: 6,
-    name: "Dewi Lestari",
-    time: "3 hari yang lalu",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60",
-    comment: "Bagus banget! Saya ikuti persis seperti yang ditulis dan perjalanannya jadi sangat lancar."
-  },
-  {
-    id: 7,
-    name: "Rudi Hermawan",
-    time: "1 minggu yang lalu",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60",
-    comment: "Sangat membantu buat saya yang baru pertama kali merencanakan liburan sendiri tanpa agen travel."
-  },
-  {
-    id: 8,
-    name: "Lina Marlina",
-    time: "1 minggu yang lalu",
-    rating: 4,
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=60",
-    comment: "Semua tempatnya asyik, tapi hati-hati macet kalau akhir pekan. Sebaiknya berangkat lebih pagi dari jadwal ini."
-  },
-  {
-    id: 9,
-    name: "Agus Prasetyo",
-    time: "2 minggu yang lalu",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60",
-    comment: "Wow, saya tidak menyangka Bandung punya hidden gem sebagus ini. Terima kasih rekomendasinya!"
-  },
-  {
-    id: 10,
-    name: "Maya Sari",
-    time: "2 minggu yang lalu",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60",
-    comment: "Rencana perjalanannya sangat estetik dan cocok buat yang suka foto-foto. Super recommended!"
-  },
-  {
-    id: 11,
-    name: "Dian Saputra",
-    time: "1 bulan yang lalu",
-    rating: 4,
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=60",
-    comment: "Secara keseluruhan memuaskan. Hanya saja ada satu kafe yang ternyata sudah tutup sementara."
-  },
-  {
-    id: 12,
-    name: "Nita Gunawan",
-    time: "1 bulan yang lalu",
-    rating: 5,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60",
-    comment: "Teman-teman sangat senang dengan pilihan tempat nongkrongnya. Terima kasih untuk itinerary yang luar biasa ini!"
-  }
-];
+import { getItineraryById } from "@/services/plans";
+import { getReviewsByItineraryId } from "@/services/reviews";
 
 const formatTripRange = (startStr: string, endStr: string) => {
   if (!startStr || !endStr) return "Tanggal tidak ditentukan";
@@ -126,12 +29,19 @@ export default function CommunityPage() {
     pax: 1
   });
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [reviews, setReviews] = useState<any[]>([]);
+
   const [activeSort, setActiveSort] = useState("Terbaru");
   const [currentPage, setCurrentPage] = useState(1);
   const reviewsPerPage = 4;
 
-  const sortedReviews = [...mockReviews].sort((a, b) => {
-    if (activeSort === "Terbaru") return b.id - a.id;
+  const sortedReviews = [...reviews].sort((a, b) => {
+    if (activeSort === "Terbaru") {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : a.id;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : b.id;
+      return dateB - dateA;
+    }
     return a.id - b.id;
   });
 
@@ -139,22 +49,101 @@ export default function CommunityPage() {
   const startIndex = (currentPage - 1) * reviewsPerPage;
   const currentReviews = sortedReviews.slice(startIndex, startIndex + reviewsPerPage);
 
+  const averageRating = reviews.length > 0
+    ? (reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length).toFixed(1)
+    : "0.0";
+  const totalReviews = reviews.length;
+
   useEffect(() => {
-    const savedPlan = localStorage.getItem(`plan_${id}`);
-    if (savedPlan) {
-      setTripData(JSON.parse(savedPlan));
-    }
+    const fetchItinerary = async () => {
+      try {
+        setIsLoading(true);
+        let res = await getItineraryById(id as string);
+        const data = res.data || res;
+
+        setTripData({
+          title: data.title || "Untitled Plan",
+          destination: data.location?.name || data.location?.locationName || "Destinasi",
+          startDate: data.startDate,
+          endDate: data.endDate,
+          pax: data.travelerCount || 1,
+          savedCount: data.savedCount || 0,
+          isPublic: data.visibilityStatus === "PUBLISHED" || data.visibilityStatus === "PUBLIC",
+          bannerImage: (data.bannerPhotoUrl || data.bannerImageUrl) ? ((data.bannerPhotoUrl || data.bannerImageUrl).startsWith('http') ? (data.bannerPhotoUrl || data.bannerImageUrl) : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${data.bannerPhotoUrl || data.bannerImageUrl}`) : "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&auto=format&fit=crop&q=80"
+        });
+
+        const revRes = await getReviewsByItineraryId(id as string);
+        const revData = revRes.data || revRes;
+
+        if (Array.isArray(revData)) {
+          const parsedReviews = revData.map((r: any, idx: number) => ({
+            id: r.reviewId || idx,
+            name: r.user?.fullName || "Pengguna Anonim",
+            time: r.createdAt ? new Date(r.createdAt).toLocaleDateString('id-ID') : "Baru saja",
+            rating: r.ratingValue || 5,
+            avatar: r.user?.profilePhotoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60",
+            comment: r.comment || "Tidak ada komentar",
+            createdAt: r.createdAt
+          }));
+          setReviews(parsedReviews);
+        } else if (revData?.items && Array.isArray(revData.items)) {
+          const parsedReviews = revData.items.map((r: any, idx: number) => ({
+            id: r.reviewId || idx,
+            name: r.user?.fullName || "Pengguna Anonim",
+            time: r.createdAt ? new Date(r.createdAt).toLocaleDateString('id-ID') : "Baru saja",
+            rating: r.ratingValue || 5,
+            avatar: r.user?.profilePhotoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60",
+            comment: r.comment || "Tidak ada komentar",
+            createdAt: r.createdAt
+          }));
+          setReviews(parsedReviews);
+        }
+      } catch (error) {
+        console.error("Gagal memuat detail rencana atau ulasan:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchItinerary();
   }, [id]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-bg-main font-sans flex flex-col">
+        <Header />
+        <div className="flex-grow flex flex-col items-center justify-center">
+          <Loader2 size={32} className="animate-spin text-brand-primary mb-4" />
+          <p className="text-text-muted font-medium">Memuat data komunitas...</p>
+        </div>
+        <MobileNav />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-bg-main font-sans pb-20">
+    <div className="min-h-screen bg-bg-main font-sans flex flex-col">
       <Header />
 
       <div className="relative w-full h-[280px] md:h-[320px]">
-        <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&auto=format&fit=crop&q=80" alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={tripData.bannerImage} alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
         <div className="relative z-10 max-w-[1200px] mx-auto px-4 md:px-8 h-full flex flex-col justify-end pb-10 text-white">
-          <p className="text-[12px] md:text-[13px] font-medium opacity-80 mb-2">My Plans &gt; {tripData.title}</p>
+          <div className="text-[12px] md:text-[13px] font-medium mb-2 flex items-center gap-1 opacity-90">
+            {/* Mobile View: Back Button Only */}
+            <Link href="/my-plans" className="md:hidden flex items-center justify-center p-1 -ml-2 hover:bg-white/20 rounded-full transition-colors">
+              <ChevronLeft size={28} className="text-white" />
+            </Link>
+
+            {/* Desktop View: Full Breadcrumb */}
+            <div className="hidden md:flex items-center gap-1">
+              <Link href="/my-plans" className="hover:underline hover:text-white transition-colors">
+                My Plans
+              </Link>
+              <span className="text-white/70"> &gt; </span>
+              <span className="text-white/70 truncate max-w-[300px]">{tripData.title}</span>
+            </div>
+          </div>
           <h1 className="text-[32px] md:text-[40px] font-serif font-bold leading-tight mb-4">{tripData.title}</h1>
           <div className="flex flex-wrap gap-4 md:gap-6 text-[13px] font-medium">
             <span className="flex items-center gap-1.5"><Calendar size={16} /> {formatTripRange(tripData.startDate, tripData.endDate)}</span>
@@ -178,7 +167,6 @@ export default function CommunityPage() {
           </div>
 
           <div className="flex-grow bg-bg-surface border border-border-default rounded-2xl p-6 md:p-8 shadow-sm">
-
             <div className="mb-8">
               <h2 className="text-[24px] font-serif font-bold text-text-heading mb-2">Komunitas</h2>
               <p className="text-[14px] text-text-body font-medium leading-relaxed">
@@ -193,10 +181,10 @@ export default function CommunityPage() {
                 </div>
                 <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Rata-Rata Rating</p>
                 <div className="flex items-baseline gap-1 mb-1">
-                  <h3 className="text-[32px] font-serif font-bold text-text-heading leading-none">4.8</h3>
+                  <h3 className="text-[32px] font-serif font-bold text-text-heading leading-none">{averageRating}</h3>
                   <span className="text-[16px] font-bold text-text-muted">/ 5.0</span>
                 </div>
-                <p className="text-[12px] font-medium text-text-muted">Dari 54 ulasan wisatawan</p>
+                <p className="text-[12px] font-medium text-text-muted">Dari {totalReviews} ulasan wisatawan</p>
               </div>
 
               <div className="border border-border-default rounded-xl p-5 hover:shadow-sm transition-shadow">
@@ -205,7 +193,7 @@ export default function CommunityPage() {
                 </div>
                 <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Total Disimpan</p>
                 <div className="flex items-baseline gap-1 mb-1">
-                  <h3 className="text-[32px] font-serif font-bold text-text-heading leading-none">124</h3>
+                  <h3 className="text-[32px] font-serif font-bold text-text-heading leading-none">{tripData.savedCount || 0}</h3>
                   <span className="text-[16px] font-bold text-text-heading">kali</span>
                 </div>
                 <p className="text-[12px] font-medium text-text-muted">Wisatawan menyimpan rencana ini</p>
@@ -217,7 +205,7 @@ export default function CommunityPage() {
                 </div>
                 <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Total Komentar</p>
                 <div className="flex items-baseline gap-1 mb-1">
-                  <h3 className="text-[32px] font-serif font-bold text-text-heading leading-none">12</h3>
+                  <h3 className="text-[32px] font-serif font-bold text-text-heading leading-none">{totalReviews}</h3>
                   <span className="text-[16px] font-bold text-text-heading">pesan</span>
                 </div>
                 <p className="text-[12px] font-medium text-text-muted">Dari wisatawan</p>
