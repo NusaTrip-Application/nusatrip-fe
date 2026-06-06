@@ -13,7 +13,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { useState, useEffect, useRef, Suspense } from "react";
-import { getMyProfile } from "@/services/auth";
+import { getMyProfile, logoutUser } from "@/services/auth";
 
 function HeaderSearchInput() {
   const router = useRouter();
@@ -76,10 +76,12 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
       icon: <LogOut size={16} />,
       label: "Log Out",
       danger: false,
-      onClick: () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("nusatrip_user");
-        alert("Anda berhasil keluar.");
+      onClick: async () => {
+        try {
+          await logoutUser();
+        } catch {
+          // ignore API errors — token is already cleared by logoutUser
+        }
         router.push("/login");
         onClose();
       },
