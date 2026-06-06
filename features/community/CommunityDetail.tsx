@@ -217,38 +217,35 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
           </h2>
 
           {/* Timeline */}
-          <div className="relative pl-1 mb-10">
+          <div className="relative ml-1 md:ml-2 mb-10">
             {/* Vertical Line */}
-            <div className="absolute left-[15px] top-4 bottom-4 w-px bg-border-default -z-10" />
+            <div className="absolute left-[13px] top-6 bottom-4 w-[2px] bg-[#C3C6D7] z-0" />
 
-            <div className="space-y-10">
+            <div className="space-y-10 relative z-10">
               {MOCK_DATA.timeline.map((item, idx) => (
-                <div key={idx} className="flex gap-4 md:gap-6">
+                <div key={idx} className="flex gap-5 md:gap-6">
                   {/* Circle Indicator */}
                   <div className="flex flex-col items-center shrink-0">
-                    <div className="w-[30px] h-[30px] rounded-full border-2 border-[#2563EB] bg-bg-main flex items-center justify-center relative mt-0.5">
-                      <div className="w-[10px] h-[10px] rounded-full bg-[#2563EB]" />
+                    <div className="w-[28px] h-[28px] rounded-full border-[2px] border-[#2563EB] bg-bg-main flex items-center justify-center relative mt-0.5">
+                      <div className="w-[8px] h-[8px] rounded-full bg-[#2563EB]" />
+                      <div className="absolute -bottom-[5px] w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-[#2563EB]" />
                     </div>
                   </div>
 
                   {/* Card Content */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[#2563EB] font-bold text-[14px] mb-3">{item.time}</p>
-                    <div className="rounded-xl md:rounded-2xl overflow-hidden mb-3 md:mb-4 relative aspect-[16/9] md:aspect-[21/9] shadow-sm">
+                  <div className="flex-1 min-w-0 pb-2">
+                    <p className="text-[#2563EB] font-bold text-[16px] mb-3 leading-none pt-1">{item.time}</p>
+                    <div className="rounded-xl overflow-hidden mb-4 relative aspect-[16/9] md:aspect-[21/9] shadow-sm">
                       <img src={item.image} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
-                      <div className="absolute top-3 left-3 md:top-4 md:left-4 bg-[#2563EB]/90 text-white text-[10px] font-bold px-2 py-1 rounded tracking-wide">
+                      <div className="absolute top-4 left-4 bg-[#2563EB] text-white text-[11px] font-bold px-3 py-1.5 rounded tracking-wide">
                         {item.category}
                       </div>
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 md:p-5 pt-12">
-                        <h3 className="font-bold text-white text-base md:text-xl line-clamp-1">{item.title}</h3>
-                        <p className="text-white/90 text-[11px] md:text-[13px] mt-0.5">{item.subtitle}</p>
-                      </div>
-                      <div className="absolute bottom-3 right-3 md:bottom-4 md:right-4 flex items-center gap-1 text-white font-bold text-[12px] md:text-[14px]">
-                        <Star className="fill-[#F59E0B] text-[#F59E0B]" size={14} />
-                        {item.rating}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 md:p-5 pt-16">
+                        <h3 className="font-bold text-white text-lg md:text-xl line-clamp-1">{item.title}</h3>
+                        <p className="text-white/90 text-[13px] mt-1">{item.subtitle}</p>
                       </div>
                     </div>
-                    <p className="text-text-body text-[13px] md:text-[14px] bg-bg-surface p-4 md:p-5 rounded-xl border border-border-default leading-relaxed shadow-sm">
+                    <p className="text-[#475569] text-[15px] leading-relaxed">
                       Notes: {item.notes}
                     </p>
                   </div>
