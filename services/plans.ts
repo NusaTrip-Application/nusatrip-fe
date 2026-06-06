@@ -99,3 +99,12 @@ export async function getRecommendationsByDestination(locationId: string) {
     throw error.response?.data || error.message;
   }
 }
+
+export async function getCommunityItineraries(params?: { search?: string; sort?: string; page?: number; limit?: number }) {
+  try {
+    const response = await api.get('/itineraries/community', { params });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}

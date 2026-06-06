@@ -1,34 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Search, Calendar, Wallet, Star, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
-
-const DUMMY_DATA = Array.from({ length: 9 }).map((_, i) => ({
-  id: i,
-  title: "5 Hari 4 Malam di Bandung",
-  location: "Bandung, Jawa Barat",
-  duration: "5 Hari",
-  price: "Rp 3.000.000",
-  rating: "4.8",
-  reviews: "(120)",
-  saved: "2.3k saved",
-  author: {
-    name: "Budi Santoso",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
-  },
-  image: "https://images.unsplash.com/photo-1549880338-65ddcdfd017b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-}));
+import { Search, Calendar, Wallet, Star, Bookmark, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { getCommunityItineraries } from "@/services/plans";
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"Popular" | "Recent">("Popular");
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
-  const [savedItems, setSavedItems] = useState<Record<number, boolean>>({});
+  const [savedItems, setSavedItems] = useState<Record<string, boolean>>({});
 
-  const toggleSave = (id: number) => {
+  const [itineraries, setItineraries] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCommunityItineraries = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getCommunityItineraries({
+          search: appliedSearchQuery || undefined,
+          sort: activeTab === "Popular" ? "popular" : "recent",
+        });
+        if (response.success) {
+          setItineraries(response.data.items || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch community itineraries:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCommunityItineraries();
+  }, [appliedSearchQuery, activeTab]);
+
+  const toggleSave = (id: string) => {
     setSavedItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
@@ -42,11 +51,6 @@ export default function CommunityPage() {
       handleSearchSubmit();
     }
   };
-
-  const filteredData = DUMMY_DATA.filter((item) =>
-    item.title.toLowerCase().includes(appliedSearchQuery.toLowerCase()) ||
-    item.location.toLowerCase().includes(appliedSearchQuery.toLowerCase())
-  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--color-bg-main)] text-[var(--color-text-body)]">
@@ -102,7 +106,20 @@ export default function CommunityPage() {
           </form>
         </div>
 
-        {filteredData.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-[var(--color-bg-surface)] border border-[var(--color-border-default)] rounded-xl h-[400px] animate-pulse">
+                <div className="h-48 bg-[var(--color-bg-soft-gray)] w-full rounded-t-xl" />
+                <div className="p-5 space-y-4">
+                  <div className="h-6 bg-[var(--color-bg-soft-gray)] rounded w-3/4" />
+                  <div className="h-4 bg-[var(--color-bg-soft-gray)] rounded w-1/2" />
+                  <div className="h-4 bg-[var(--color-bg-soft-gray)] rounded w-full mt-8" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : itineraries.length === 0 ? (
           <div className="w-full bg-[var(--color-bg-surface)] border border-[var(--color-border-default)] rounded-2xl p-16 flex flex-col items-center justify-center text-center shadow-sm">
             <div className="w-16 h-16 rounded-full bg-[var(--color-bg-soft-blue)] flex items-center justify-center text-[var(--color-brand-primary)] mb-4">
               <Search size={28} />
@@ -111,8 +128,7 @@ export default function CommunityPage() {
               Tidak Ada Hasil Ditemukan
             </h3>
             <p className="text-[var(--color-text-body)] text-sm mt-2 max-w-sm">
-              Kami tidak dapat menemukan komunitas yang sesuai dengan
-              pencarian Anda. Coba kata kunci lain atau reset filter.
+              Kami belum memiliki itinerary publik di komunitas saat ini. Silakan kembali lagi nanti!
             </p>
             <button
               onClick={() => {
@@ -126,25 +142,25 @@ export default function CommunityPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredData.map((item) => (
+            {itineraries.map((item) => (
             <div
-              key={item.id}
+              key={item.itineraryId}
               className="bg-[var(--color-bg-surface)] border border-[var(--color-border-default)] rounded-xl overflow-hidden flex flex-col shadow-sm"
             >
               <div className="relative h-48 w-full">
                 <img
-                  src={item.image}
+                  src={item.imageUrl || "https://images.unsplash.com/photo-1549880338-65ddcdfd017b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"}
                   alt={item.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover bg-gray-100"
                 />
                 <button
-                  onClick={() => toggleSave(item.id)}
+                  onClick={() => toggleSave(item.itineraryId)}
                   className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-hover)] flex items-center justify-center shadow-md transition-colors cursor-pointer border border-[var(--color-border-default)]"
                 >
                   <Bookmark
                     size={14}
                     className={`transition-colors ${
-                      savedItems[item.id]
+                      savedItems[item.itineraryId]
                         ? "text-[var(--color-brand-primary)] fill-[var(--color-brand-primary)]"
                         : "text-[var(--color-brand-primary)] fill-transparent hover:fill-[var(--color-brand-primary)]"
                     }`}
@@ -156,18 +172,18 @@ export default function CommunityPage() {
                 <h3 className="text-lg font-bold text-[var(--color-text-heading)] mb-1">
                   {item.title}
                 </h3>
-                <p className="text-sm text-[var(--color-text-muted)] mb-4">
-                  {item.location}
+                <p className="text-sm text-[var(--color-text-muted)] mb-4 line-clamp-1">
+                  {item.location?.locationName || "Berbagai Destinasi"}
                 </p>
 
                 <div className="flex items-center gap-4 mb-3">
                   <div className="flex items-center gap-1.5 text-sm text-[var(--color-text-body)]">
                     <Calendar size={16} />
-                    <span>{item.duration}</span>
+                    <span>{item.durationDays ? `${item.durationDays} Hari` : "Beberapa Hari"}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm text-[var(--color-text-body)]">
                     <Wallet size={16} />
-                    <span>{item.price}</span>
+                    <span>{item.budgetPreference === 1 ? "Hemat" : item.budgetPreference === 2 ? "Menengah" : item.budgetPreference === 3 ? "Mewah" : "TBD"}</span>
                   </div>
                 </div>
 
@@ -178,31 +194,37 @@ export default function CommunityPage() {
                       className="fill-[var(--color-brand-warm)] text-[var(--color-brand-warm)]"
                     />
                     <span className="font-semibold text-[var(--color-text-heading)]">
-                      {item.rating}
+                      {item.rating || "4.5"}
                     </span>
                     <span className="text-[var(--color-text-muted)]">
-                      {item.reviews}
+                      ({item.reviewsCount || 0})
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
                     <Bookmark size={16} />
-                    <span>{item.saved}</span>
+                    <span>{item.bookmarkCount || 0} saved</span>
                   </div>
                 </div>
 
                 <div className="mt-auto border-t border-[var(--color-border-default)] pt-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <img
-                      src={item.author.avatar}
-                      alt={item.author.name}
-                      className="w-6 h-6 rounded-full object-cover"
-                    />
+                    {item.user?.profilePhotoUrl ? (
+                      <img
+                        src={item.user.profilePhotoUrl}
+                        alt={item.user?.fullName || "User"}
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">
+                        {(item.user?.fullName || "User").charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <span className="text-sm font-semibold text-[var(--color-text-body)]">
-                      {item.author.name}
+                      {item.user?.fullName || "Pengguna Anonim"}
                     </span>
                   </div>
                   <Link
-                    href={`/community/${item.id}`}
+                    href={`/community/${item.itineraryId}`}
                     className="text-sm font-semibold text-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary-hover)] transition-colors"
                   >
                     View Details
@@ -214,23 +236,19 @@ export default function CommunityPage() {
           </div>
         )}
 
-        <div className="mt-12 flex justify-center items-center gap-2">
-          <button className="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] transition-colors">
-            <ChevronLeft size={18} />
-          </button>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-[var(--color-bg-surface)] font-semibold shadow-sm transition-colors">
-            1
-          </button>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-body)] hover:bg-[var(--color-bg-hover)] transition-colors">
-            2
-          </button>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-body)] hover:bg-[var(--color-bg-hover)] transition-colors">
-            3
-          </button>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] transition-colors">
-            <ChevronRight size={18} />
-          </button>
-        </div>
+        {itineraries.length > 0 && (
+          <div className="mt-12 flex justify-center items-center gap-2">
+            <button className="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] transition-colors">
+              <ChevronLeft size={18} />
+            </button>
+            <button className="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-[var(--color-bg-surface)] font-semibold shadow-sm transition-colors">
+              1
+            </button>
+            <button className="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] transition-colors">
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
       </main>
 
       <Footer />
