@@ -4,103 +4,11 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, Star, List, LayoutGrid, PlusCircle, X, MapPin, Clock, Globe, Phone } from "lucide-react";
-import { getRecommendationsByDestination } from "@/services/plans"; 
+import { getRecommendationsByDestination, getItineraryById, addItineraryItem } from "@/services/plans"; 
 
 const filters = ["All Spots", "Nature", "Culinary", "Architecture", "Art & Culture", "Family"];
 
-const mockPlaces = [
-  { 
-    id: 1, 
-    name: "Kawah Putih", 
-    category: "NATURE", 
-    rating: 4.8, 
-    price: "Rp 30.000 - 80.000", 
-    img: "https://images.unsplash.com/photo-1583130190518-e397cff177ce?w=500&auto=format&fit=crop&q=60", 
-    desc: "Kawah vulkanik yang menakjubkan ini terletak sekitar 50 km di selatan Bandung. Terkenal dengan airnya yang sangat asam yang berubah warna dari kebiruan menjadi putih kehijauan, atau cokelat, tergantung pada konsentrasi belerang.",
-    address: "Ciwidey, Bandung, Jawa Barat",
-    hours: { weekday: "07:00 - 17:00", weekend: "07:00 - 18:00" },
-    website: "https://kawahputih.com",
-    phone: "+62 812-3456-7890"
-  },
-  { 
-    id: 2, 
-    name: "Floating Market", 
-    category: "FAMILY", 
-    rating: 4.5, 
-    price: "Rp 35.000 - 75.000", 
-    img: "https://images.unsplash.com/photo-1584824486516-0555a07fc511?w=500&auto=format&fit=crop&q=60", 
-    desc: "Destinasi unik di mana Anda dapat membeli jajanan tradisional Sunda dari pedagang di atas perahu. Tersedia juga berbagai wahana permainan anak dan taman tematik yang cocok untuk keluarga.",
-    address: "Lembang, Kab. Bandung Barat",
-    hours: { weekday: "09:00 - 18:00", weekend: "08:00 - 19:00" },
-    website: "https://floatingmarket-lembang.com",
-    phone: "+62 811-2233-4455"
-  },
-  { 
-    id: 3, 
-    name: "Braga Permai", 
-    category: "CULINARY", 
-    rating: 4.6, 
-    price: "Rp 150.000 - 300.000", 
-    img: "https://images.unsplash.com/photo-1555899434-94d1368aa7af?w=500&auto=format&fit=crop&q=60", 
-    desc: "Restoran legendaris dengan perpaduan kuliner Belanda-Indonesia yang terletak di jalan ikonik Braga. Menawarkan suasana klasik yang membawa Anda kembali ke era Paris van Java.",
-    address: "Jl. Braga No.58, Sumur Bandung",
-    hours: { weekday: "08:00 - 22:00", weekend: "08:00 - 23:00" },
-    website: "https://bragapermai.com",
-    phone: "+62 22-423-2345"
-  },
-  { 
-    id: 4, 
-    name: "Tea Plantation", 
-    category: "NATURE", 
-    rating: 4.9, 
-    price: "Free - Rp 10.000", 
-    img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=500&auto=format&fit=crop&q=60", 
-    desc: "Berjalanlah melintasi pagi yang berkabut di Perkebunan Teh Cukul untuk melihat pemandangan matahari terbit terbaik di Jawa Barat dengan udara yang sangat sejuk.",
-    address: "Pangalengan, Bandung Selatan",
-    hours: { weekday: "24 Jam", weekend: "24 Jam" },
-    website: "https://explorepangalengan.com",
-    phone: "+62 855-6677-8899"
-  },
-  { 
-    id: 5, 
-    name: "Selasar Sunaryo", 
-    category: "ART & CULTURE", 
-    rating: 4.7, 
-    price: "Rp 25.000 - 50.000", 
-    img: "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=500&auto=format&fit=crop&q=60", 
-    desc: "Ruang seni kontemporer ikonik dan kafe yang menawarkan pemandangan bukit panorama dan kesenian lokal. Cocok untuk bersantai sambil menikmati karya seni.",
-    address: "Ciburial, Cimenyan, Bandung",
-    hours: { weekday: "10:00 - 17:00", weekend: "10:00 - 18:00" },
-    website: "https://selasarsunaryo.com",
-    phone: "+62 22-250-7939"
-  },
-  { 
-    id: 6, 
-    name: "Selasar Sunaryo", 
-    category: "ART & CULTURE", 
-    rating: 4.7, 
-    price: "Rp 25.000 - 50.000", 
-    img: "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=500&auto=format&fit=crop&q=60", 
-    desc: "Ruang seni kontemporer ikonik dan kafe yang menawarkan pemandangan bukit panorama dan kesenian lokal. Cocok untuk bersantai sambil menikmati karya seni.",
-    address: "Ciburial, Cimenyan, Bandung",
-    hours: { weekday: "10:00 - 17:00", weekend: "10:00 - 18:00" },
-    website: "https://selasarsunaryo.com",
-    phone: "+62 22-250-7939"
-  },
-  { 
-    id: 7, 
-    name: "Selasar Sunaryo", 
-    category: "ART & CULTURE", 
-    rating: 4.7, 
-    price: "Rp 25.000 - 50.000", 
-    img: "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=500&auto=format&fit=crop&q=60", 
-    desc: "Ruang seni kontemporer ikonik dan kafe yang menawarkan pemandangan bukit panorama dan kesenian lokal. Cocok untuk bersantai sambil menikmati karya seni.",
-    address: "Ciburial, Cimenyan, Bandung",
-    hours: { weekday: "10:00 - 17:00", weekend: "10:00 - 18:00" },
-    website: "https://selasarsunaryo.com",
-    phone: "+62 22-250-7939"
-  }
-];
+
 
 const generateTimeOptions = () => {
   const times = [];
@@ -124,7 +32,10 @@ const generateDateOptions = (startDate: string, endDate: string) => {
       day: 'numeric', 
       month: 'short' 
     });
-    dates.push(formattedDate);
+    dates.push({
+      label: formattedDate,
+      value: currentDate.toISOString().split('T')[0]
+    });
     currentDate.setDate(currentDate.getDate() + 1);
   }
   
@@ -155,13 +66,13 @@ const generateTimeOptionsBasedOnHours = (hoursString: string) => {
 
 export default function RecommendationsList() {
   const searchParams = useSearchParams();
-  const destination = searchParams.get("destination") || "Bandung";
+  const router = useRouter();
+  const tripId = searchParams.get("tripId");
 
-  const startDate = searchParams.get("start") || ""; 
-  const endDate = searchParams.get("end") || "";
+  const [destinationName, setDestinationName] = useState<string>("Destinasi");
+  const [dateOptions, setDateOptions] = useState<any[]>([]);
 
   const timeOptions = generateTimeOptions();
-  const dateOptions = generateDateOptions(startDate, endDate);
 
   const [activeFilter, setActiveFilter] = useState("All Spots");
   const [selectedPlace, setSelectedPlace] = useState<any>(null);
@@ -175,41 +86,69 @@ export default function RecommendationsList() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  const router = useRouter();
-  const tripId = searchParams.get("tripId") || "1";
-
   const [chosenTime, setChosenTime] = useState("09:00");
   const [notes, setNotes] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+
+  const mapPlace = (p: any) => ({
+    id: p.placeId || p.id,
+    name: p.placeName || p.name,
+    category: p.categories && p.categories.length > 0 ? p.categories[0].categoryName : (p.categoryName || p.category || "NATURE"),
+    rating: p.ratingValue || p.rating || 4.5,
+    price: p.priceMax ? `Rp ${p.priceMax.toLocaleString('id-ID')}` : (p.estimatedPrice ? `Rp ${p.estimatedPrice.toLocaleString('id-ID')}` : (p.price || "Free")),
+    img: p.image?.imageUrl || p.coverImage || p.img || "https://images.unsplash.com/photo-1583130190518-e397cff177ce?w=500&auto=format&fit=crop&q=60",
+    desc: p.shortDescription || p.description || p.desc || "Tempat wisata menarik untuk dikunjungi.",
+    address: p.address || "Indonesia",
+    hours: p.operationalHours ? { weekday: p.operationalHours, weekend: p.operationalHours } : (p.hours || { weekday: "08:00 - 17:00", weekend: "08:00 - 18:00" }),
+    website: p.website || "#",
+    phone: p.phoneNumber || p.phone || "-"
+  });
 
   useEffect(() => {
     setCurrentPage(1);
   }, [activeFilter]);
 
   useEffect(() => {
-    async function fetchPlaces() {
+    async function fetchData() {
       try {
         setIsLoading(true);
         setError(null);
         
-        // KODE BACKEND
-        // const data = await getRecommendationsByDestination(destination);
-        // setPlaces(data);
+        if (!tripId) {
+          throw new Error("Trip ID tidak ditemukan di URL");
+        }
 
-        // MOCK DATA SIMULASI
-        setTimeout(() => {
-          setPlaces(mockPlaces);
-          setIsLoading(false);
-        }, 1000);
+        let itineraryDataRaw = await getItineraryById(tripId);
+        const itineraryData = itineraryDataRaw.data || itineraryDataRaw;
+        
+        const locName = itineraryData.location?.name || itineraryData.location?.locationName || itineraryData.locationId || "Destinasi";
+        setDestinationName(locName);
+        
+        const opts = generateDateOptions(itineraryData.startDate, itineraryData.endDate);
+        setDateOptions(opts);
+
+        const recommendations = await getRecommendationsByDestination(itineraryData.locationId);
+        
+        const recList = Array.isArray(recommendations) 
+          ? recommendations 
+          : (recommendations.data?.items || recommendations.data || recommendations.places || []);
+          
+        if (!Array.isArray(recList)) {
+          console.error("Format balasan API:", recommendations);
+          throw new Error("Gagal membaca daftar tempat dari server");
+        }
+
+        setPlaces(recList.map(mapPlace));
 
       } catch (err: any) {
         setError(err.message || "Terjadi kesalahan saat memuat data.");
+      } finally {
         setIsLoading(false);
-      } 
-      // finally setIsLoading(false)
+      }
     }
 
-    fetchPlaces();
-  }, [destination]);
+    fetchData();
+  }, [tripId]);
 
   const openDetailModal = (place: any) => {
     setSelectedPlace(place);
@@ -222,12 +161,11 @@ export default function RecommendationsList() {
     setModalType("add");
     setNotes("");
     
-    const dateOptions = generateDateOptions(startDate, endDate);
     if (dateOptions.length > 0) {
       const firstDate = dateOptions[0];
-      setChosenDate(firstDate);
+      setChosenDate(firstDate.value);
       
-      const isWeekend = firstDate.startsWith("Sabtu") || firstDate.startsWith("Minggu");
+      const isWeekend = firstDate.label.startsWith("Sabtu") || firstDate.label.startsWith("Minggu");
       const opHours = isWeekend ? place.hours?.weekend : place.hours?.weekday;
       const opts = generateTimeOptionsBasedOnHours(opHours);
       if (opts.length > 0) {
@@ -255,7 +193,7 @@ export default function RecommendationsList() {
   if (isLoading) {
     return (
       <div className="w-full text-center py-20 font-sans font-medium text-text-body">
-        Sedang mencari tempat wisata terbaik di {destination}...
+        Sedang mencari tempat wisata terbaik...
       </div>
     );
   }
@@ -276,7 +214,7 @@ export default function RecommendationsList() {
             My Plans
           </Link>
           <ChevronRight size={14} />
-          <span className="text-text-body">{destination} Getaway</span>
+          <span className="text-text-body">{destinationName} Getaway</span>
         </div>
 
         <div className="flex md:hidden items-center mb-4">
@@ -289,10 +227,10 @@ export default function RecommendationsList() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-[32px] md:text-[40px] font-serif font-bold text-text-heading leading-[1.2] mb-2">
-              {destination} Rekomendasi
+              {destinationName} Rekomendasi
             </h1>
             <p className="text-sm text-text-body font-medium">
-              Tempat-tempat pilihan berdasarkan rencana perjalanan Anda ke {destination}.
+              Tempat-tempat pilihan berdasarkan rencana perjalanan Anda ke {destinationName}.
             </p>
           </div>    
           
@@ -326,7 +264,7 @@ export default function RecommendationsList() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         {currentPlaces.length === 0 ? (
           <div className="col-span-full text-center py-10 text-text-muted font-medium">
-            Tidak ada tempat wisata yang ditemukan untuk destinasi {destination}.
+            Tidak ada tempat wisata yang ditemukan untuk destinasi {destinationName}.
           </div>
         ) : (
           currentPlaces.map((place) => (
@@ -365,7 +303,7 @@ export default function RecommendationsList() {
                   onClick={(e) => openAddModal(place, e)}
                   className="w-full py-2.5 bg-brand-primary/10 text-brand-primary font-bold text-[13px] rounded-lg hover:bg-brand-primary hover:text-text-light transition-colors flex justify-center items-center gap-2"
                 >
-                  <PlusCircle size={16} /> Add to Itinerary
+                  <PlusCircle size={16} /> Tambah ke Rencana
                 </button>
               </div>
             </div>
@@ -472,7 +410,7 @@ export default function RecommendationsList() {
 
                 <div className="mt-auto flex gap-3 pt-4 border-t border-border-default">
                   <button onClick={(e) => { closeModal(); openAddModal(selectedPlace, e as any); }} className="flex-1 bg-brand-primary hover:bg-brand-primary-hover text-text-light font-bold text-[14px] py-3 rounded-xl transition-colors flex justify-center items-center gap-2">
-                    <PlusCircle size={18} /> Add to Itinerary
+                    <PlusCircle size={18} /> Tambah ke Rencana
                   </button>
                   <button onClick={closeModal} className="px-6 border border-border-strong text-text-heading font-bold text-[14px] rounded-xl hover:bg-bg-hover transition-colors">
                     Tutup
@@ -483,7 +421,8 @@ export default function RecommendationsList() {
           )}
 
           {modalType === "add" && selectedPlace && (() => {
-            const isWeekend = chosenDate.startsWith("Sabtu") || chosenDate.startsWith("Minggu");
+            const selectedDateOption = dateOptions.find(d => d.value === chosenDate) || dateOptions[0];
+            const isWeekend = selectedDateOption ? (selectedDateOption.label.startsWith("Sabtu") || selectedDateOption.label.startsWith("Minggu")) : false;
             
             const operationalHours = isWeekend 
               ? selectedPlace.hours?.weekend 
@@ -512,9 +451,12 @@ export default function RecommendationsList() {
                     <select 
                       value={chosenDate}
                       onChange={(e) => {
-                        const newDate = e.target.value;
-                        setChosenDate(newDate);
-                        const isWknd = newDate.startsWith("Sabtu") || newDate.startsWith("Minggu");
+                        const newDateVal = e.target.value;
+                        setChosenDate(newDateVal);
+                        
+                        const selectedOpt = dateOptions.find(d => d.value === newDateVal);
+                        const isWknd = selectedOpt ? (selectedOpt.label.startsWith("Sabtu") || selectedOpt.label.startsWith("Minggu")) : false;
+                        
                         const opHours = isWknd ? selectedPlace.hours?.weekend : selectedPlace.hours?.weekday;
                         const opts = generateTimeOptionsBasedOnHours(opHours);
                         if (opts.length > 0 && !opts.includes(chosenTime)) {
@@ -523,8 +465,8 @@ export default function RecommendationsList() {
                       }}
                       className="w-full px-3 py-2.5 rounded-lg border border-border-default bg-bg-surface text-[14px] font-medium focus:ring-1 focus:ring-brand-primary outline-none"
                     >
-                      {dateOptions.map((date, index) => (
-                        <option key={index} value={date}>{date}</option>
+                      {dateOptions.map((dateObj, index) => (
+                        <option key={index} value={dateObj.value}>{dateObj.label}</option>
                       ))}
                     </select>
                   </div>
@@ -558,45 +500,36 @@ export default function RecommendationsList() {
 
                 <div className="flex gap-3">
                   <button onClick={closeModal} className="flex-1 py-2.5 border border-border-strong text-text-heading font-bold text-[14px] rounded-xl hover:bg-bg-hover transition-colors">
-                    Cancel
+                    Batal
                   </button>
                   <button 
-                    onClick={() => {
-                      const newActivity = {
-                        id: Date.now(),
-                        date: chosenDate,
-                        time: chosenTime,
-                        title: selectedPlace.name,
-                        subtitle: selectedPlace.address,
-                        category: selectedPlace.category,
-                        rating: selectedPlace.rating,
-                        img: selectedPlace.img,
-                        notes: notes || "Mulai hari dengan aktivitas seru!",
-                        price: selectedPlace.price
-                      };
-
-                      const existingData = localStorage.getItem(`itinerary_${tripId}`);
-                      const itineraryList = existingData ? JSON.parse(existingData) : [];
-
-                      const isConflict = itineraryList.some((item: any) => 
-                        item.date === chosenDate && item.time === chosenTime
-                      );
-
-                      if (isConflict) {
-                        alert("Sudah ada jadwal di jam tersebut pada hari ini. Silakan pilih jam lain.");
-                        return;
+                    onClick={async () => {
+                      if (!tripId || isAdding) return;
+                      setIsAdding(true);
+                      try {
+                        await addItineraryItem(tripId, {
+                          placeId: selectedPlace.id,
+                          visitDate: new Date(chosenDate).toISOString(),
+                          visitTime: chosenTime,
+                          notes: notes || ""
+                        });
+                        alert("Berhasil menambahkan jadwal ke rencana perjalanan!");
+                        closeModal();
+                        router.push(`/my-plans/${tripId}`);
+                      } catch (error: any) {
+                        alert(error.message || "Gagal menambahkan jadwal. Pastikan jam tidak bentrok.");
+                      } finally {
+                        setIsAdding(false);
                       }
-
-                      itineraryList.push(newActivity);
-                      localStorage.setItem(`itinerary_${tripId}`, JSON.stringify(itineraryList));
-
-                      closeModal();
-
-                      router.push(`/my-plans/${tripId}`);
                     }} 
-                    className="flex-1 bg-brand-primary hover:bg-brand-primary-hover text-text-light font-bold text-[14px] py-2.5 rounded-xl transition-colors"
+                    disabled={isAdding}
+                    className={`flex-1 font-bold text-[14px] py-2.5 rounded-xl transition-colors ${
+                      isAdding 
+                        ? "bg-brand-primary/70 cursor-not-allowed text-text-light" 
+                        : "bg-brand-primary hover:bg-brand-primary-hover text-text-light"
+                    }`}
                   >
-                    Add
+                    {isAdding ? "Menambahkan..." : "Tambahkan"}
                   </button>
                 </div>
               </div>

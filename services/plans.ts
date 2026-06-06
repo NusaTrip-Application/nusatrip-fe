@@ -100,9 +100,36 @@ export async function getRecommendationsByDestination(locationId: string) {
   }
 }
 
+export async function updateItineraryBudget(itineraryId: string, estimatedTotalBudget: number) {
+  try {
+    const response = await api.patch(`/itineraries/${itineraryId}/budget`, { estimatedTotalBudget });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
 export async function getCommunityItineraries(params?: { search?: string; sort?: string; page?: number; limit?: number }) {
   try {
     const response = await api.get('/itineraries/community', { params });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function updateItineraryItem(itineraryId: string, itemId: string, payload: Partial<ItineraryItem>) {
+  try {
+    const response = await api.patch(`/itineraries/${itineraryId}/items/${itemId}`, payload);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function deleteItineraryItem(itineraryId: string, itemId: string) {
+  try {
+    const response = await api.delete(`/itineraries/${itineraryId}/items/${itemId}`);
     return response.data;
   } catch (error: any) {
     throw error.response?.data || error.message;
