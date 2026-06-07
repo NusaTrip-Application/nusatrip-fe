@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
@@ -173,8 +174,16 @@ export default function SavedReferencesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  const router = useRouter();
+
   React.useEffect(() => {
     async function fetchData() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
         setIsLoading(true);
         const res = await getSavedItineraries();

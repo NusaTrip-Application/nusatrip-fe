@@ -2,10 +2,20 @@
 
 import { Star, Bookmark, Calendar, Wallet } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function TripInspiration() {
+  const router = useRouter();
   const [savedTrips, setSavedTrips] = useState<Record<number, boolean>>({});
-  const toggleSave = (idx: number) => setSavedTrips(prev => ({ ...prev, [idx]: !prev[idx] }));
+  
+  const toggleSave = (idx: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    setSavedTrips(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
 
   const trips = [
     {

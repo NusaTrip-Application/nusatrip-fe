@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Search, Calendar, Wallet, Star, Bookmark, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
@@ -15,6 +16,8 @@ export default function CommunityPage() {
 
   const [itineraries, setItineraries] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const router = useRouter();
 
   useEffect(() => {
     const fetchCommunityItineraries = async () => {
@@ -38,6 +41,11 @@ export default function CommunityPage() {
   }, [appliedSearchQuery, activeTab]);
 
   const toggleSave = (id: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
     setSavedItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 

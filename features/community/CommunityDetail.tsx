@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ChevronRight,
   MapPin,
@@ -143,6 +144,16 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
   const [reviewRating, setReviewRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
+  const router = useRouter();
+
+  const requireAuth = (callback: () => void) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    callback();
+  };
 
   return (
     <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 py-8 md:py-12 bg-bg-main relative">
@@ -259,10 +270,16 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
         <aside className="lg:w-[340px] shrink-0">
           <div className="bg-bg-surface border border-border-default rounded-2xl p-6 mb-6 shadow-sm">
             <h3 className="text-lg font-bold text-text-heading mb-4">Tindakan Cepat</h3>
-            <button className="w-full bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-[14px] py-3 px-4 rounded-xl flex items-center justify-center gap-2 mb-3 transition-colors shadow-sm">
+            <button 
+              onClick={() => requireAuth(() => alert("Fitur duplikat segera hadir!"))}
+              className="w-full bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-[14px] py-3 px-4 rounded-xl flex items-center justify-center gap-2 mb-3 transition-colors shadow-sm"
+            >
               <Copy size={18} /> Duplikat ke Rencana Saya
             </button>
-            <button className="w-full border-2 border-[#2563EB] text-[#2563EB] hover:bg-[#2563EB]/5 font-bold text-[14px] py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 mb-4 transition-colors">
+            <button 
+              onClick={() => requireAuth(() => alert("Fitur simpan ke referensi segera hadir!"))}
+              className="w-full border-2 border-[#2563EB] text-[#2563EB] hover:bg-[#2563EB]/5 font-bold text-[14px] py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 mb-4 transition-colors"
+            >
               <Bookmark size={18} /> Simpan ke Referensi
             </button>
             <div className="flex gap-3">
@@ -327,7 +344,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
             </div>
           </div>
           <button 
-            onClick={() => setIsReviewModalOpen(true)}
+            onClick={() => requireAuth(() => setIsReviewModalOpen(true))}
             className="bg-[#2563EB] text-white font-semibold text-[14px] py-2.5 px-6 rounded-lg hover:bg-blue-700 transition-colors shadow-sm self-start md:self-auto w-full md:w-auto"
           >
             Tulis Ulasan

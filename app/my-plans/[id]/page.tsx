@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Calendar, Users, MapPin, Plus, Map, Settings, MoreVertical, Star, X, Edit2, Trash2, AlertTriangle, Loader2, ChevronLeft } from "lucide-react";
 import Header from "@/components/Header";
@@ -60,6 +60,7 @@ const parsePriceToNumber = (priceVal: string | number) => {
 
 export default function ManageTripPage() {
   const { id } = useParams();
+  const router = useRouter();
 
   const [tripData, setTripData] = useState<any>({
     title: "Memuat Rencana Perjalanan...",
@@ -144,8 +145,13 @@ export default function ManageTripPage() {
   };
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
     fetchItinerary();
-  }, [id]);
+  }, [id, router]);
 
   const currentDayTimeline = timelineData.filter((item) => item.date === activeDate);
 
@@ -231,12 +237,11 @@ export default function ManageTripPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
         <div className="relative z-10 max-w-[1200px] mx-auto px-4 md:px-8 h-full flex flex-col justify-end pb-10 text-white">
           <div className="text-[12px] md:text-[13px] font-medium mb-2 flex items-center gap-1 opacity-90">
-            {/* Mobile View: Back Button Only */}
+
             <Link href="/my-plans" className="md:hidden flex items-center justify-center p-1 -ml-2 hover:bg-white/20 rounded-full transition-colors">
               <ChevronLeft size={28} className="text-white" />
             </Link>
 
-            {/* Desktop View: Full Breadcrumb */}
             <div className="hidden md:flex items-center gap-1">
               <Link href="/my-plans" className="hover:underline hover:text-white transition-colors">
                 My Plans

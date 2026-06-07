@@ -48,6 +48,12 @@ export default function CreatePlanForm() {
 
   useEffect(() => {
     const fetchFormData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
         const [locationsRes, categoriesRes] = await Promise.all([
           getLocationOptions(),
