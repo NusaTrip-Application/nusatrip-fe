@@ -134,4 +134,22 @@ export async function deleteItineraryItem(itineraryId: string, itemId: string) {
   } catch (error: any) {
     throw error.response?.data || error.message;
   }
+}
+
+export async function getSavedItineraries(params?: { page?: number; limit?: number }) {
+  try {
+    const response = await api.get('/itineraries/saved', { params });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function toggleSaveItinerary(itineraryId: string) {
+  try {
+    const response = await api.post(`/itineraries/${itineraryId}/save`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
 }
