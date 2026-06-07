@@ -97,7 +97,7 @@ export default function ProfilePage() {
   const [isOldPasswordVerified, setIsOldPasswordVerified] = useState(false);
   const [originalEmail, setOriginalEmail] = useState("");
   
-  const [avatarSrc, setAvatarSrc] = useState("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80");
+  const [avatarSrc, setAvatarSrc] = useState("https://ui-avatars.com/api/?name=User&background=F3F3FE&color=5855E9");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [form, setForm] = useState<ProfileForm>({
     namaLengkap: "", email: "", nomorTelepon: "", socialMediaInstagram: "", passwordLama: "", passwordBaru: "", konfirmasiPassword: "",
@@ -118,6 +118,12 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
         const response = await getMyProfile();
         const apiData = response.data; 
@@ -137,6 +143,8 @@ export default function ProfilePage() {
             ? apiData.profilePhotoUrl 
             : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${apiData.profilePhotoUrl}`;
           setAvatarSrc(finalAvatar);
+        } else {
+          setAvatarSrc(`https://ui-avatars.com/api/?name=${encodeURIComponent(apiData.fullName || 'User')}&background=F3F3FE&color=5855E9`);
         }
       } catch (error) {
         console.error("Gagal mengambil data profil:", error);

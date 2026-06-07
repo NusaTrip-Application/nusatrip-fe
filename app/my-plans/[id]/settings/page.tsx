@@ -53,6 +53,12 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const fetchItinerary = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
         setIsLoading(true);
         let res = await getItineraryById(id as string);

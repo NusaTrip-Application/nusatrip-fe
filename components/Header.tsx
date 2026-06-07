@@ -166,6 +166,8 @@ useEffect(() => {
               ? userData.profilePhotoUrl 
               : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${userData.profilePhotoUrl}`;
             setUserAvatar(finalAvatar);
+          } else {
+            setUserAvatar(`https://ui-avatars.com/api/?name=${encodeURIComponent(userData.fullName || 'User')}&background=F3F3FE&color=5855E9`);
           }
 
         } catch (error) {

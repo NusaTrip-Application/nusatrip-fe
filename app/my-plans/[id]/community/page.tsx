@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Calendar, Users, MapPin, Map, Settings, Star, Bookmark, MessageSquare, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
@@ -20,6 +20,7 @@ const formatTripRange = (startStr: string, endStr: string) => {
 
 export default function CommunityPage() {
   const { id } = useParams();
+  const router = useRouter();
 
   const [tripData, setTripData] = useState<any>({
     title: "Memuat Rencana Perjalanan...",
@@ -56,6 +57,12 @@ export default function CommunityPage() {
 
   useEffect(() => {
     const fetchItinerary = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
         setIsLoading(true);
         let res = await getItineraryById(id as string);
@@ -81,7 +88,7 @@ export default function CommunityPage() {
             name: r.user?.fullName || "Pengguna Anonim",
             time: r.createdAt ? new Date(r.createdAt).toLocaleDateString('id-ID') : "Baru saja",
             rating: r.ratingValue || 5,
-            avatar: r.user?.profilePhotoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60",
+            avatar: r.user?.profilePhotoUrl ? (r.user.profilePhotoUrl.startsWith('http') ? r.user.profilePhotoUrl : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${r.user.profilePhotoUrl}`) : `https://ui-avatars.com/api/?name=${encodeURIComponent(r.user?.fullName || r.user?.name || 'User')}&background=F3F3FE&color=5855E9`,
             comment: r.comment || "Tidak ada komentar",
             createdAt: r.createdAt
           }));
@@ -92,7 +99,7 @@ export default function CommunityPage() {
             name: r.user?.fullName || "Pengguna Anonim",
             time: r.createdAt ? new Date(r.createdAt).toLocaleDateString('id-ID') : "Baru saja",
             rating: r.ratingValue || 5,
-            avatar: r.user?.profilePhotoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60",
+            avatar: r.user?.profilePhotoUrl ? (r.user.profilePhotoUrl.startsWith('http') ? r.user.profilePhotoUrl : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${r.user.profilePhotoUrl}`) : `https://ui-avatars.com/api/?name=${encodeURIComponent(r.user?.fullName || r.user?.name || 'User')}&background=F3F3FE&color=5855E9`,
             comment: r.comment || "Tidak ada komentar",
             createdAt: r.createdAt
           }));
@@ -130,12 +137,10 @@ export default function CommunityPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
         <div className="relative z-10 max-w-[1200px] mx-auto px-4 md:px-8 h-full flex flex-col justify-end pb-10 text-white">
           <div className="text-[12px] md:text-[13px] font-medium mb-2 flex items-center gap-1 opacity-90">
-            {/* Mobile View: Back Button Only */}
             <Link href="/my-plans" className="md:hidden flex items-center justify-center p-1 -ml-2 hover:bg-white/20 rounded-full transition-colors">
               <ChevronLeft size={28} className="text-white" />
             </Link>
 
-            {/* Desktop View: Full Breadcrumb */}
             <div className="hidden md:flex items-center gap-1">
               <Link href="/my-plans" className="hover:underline hover:text-white transition-colors">
                 My Plans

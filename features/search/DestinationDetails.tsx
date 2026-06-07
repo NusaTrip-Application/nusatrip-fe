@@ -11,6 +11,7 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { getLocationById, Location } from "@/services/locations";
 import { getPlaceRecommendations, RecommendedPlace } from "@/services/places";
 
@@ -87,6 +88,7 @@ export default function DestinationDetails({
   const [locationData, setLocationData] = useState<Location | null>(null);
   const [popularPlaces, setPopularPlaces] = useState<RecommendedPlace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   const [addedItineraries, setAddedItineraries] = useState<Record<string, boolean>>({});
   const [savedCommunity, setSavedCommunity] = useState<Record<number, boolean>>({});
@@ -115,14 +117,35 @@ export default function DestinationDetails({
     fetchData();
   }, [destinationSlug]);
 
-  const toggleSaveCommunity = (idx: number) =>
+  const toggleSaveCommunity = (idx: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
     setSavedCommunity((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  };
 
   const toggleItinerary = (placeId: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
     setAddedItineraries((prev) => ({
       ...prev,
       [placeId]: !prev[placeId],
     }));
+  };
+
+  const handleStartPlanning = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    // Redirect to create plan with destination pre-filled
+    router.push(`/my-plans/create?dest=${locationData?.locationId || destinationSlug}`);
   };
 
   if (isLoading) {
@@ -183,7 +206,10 @@ export default function DestinationDetails({
             </div>
           </div>
 
-          <button className="bg-brand-primary hover:bg-brand-primary-hover text-white font-bold text-xs md:text-sm px-5 py-2.5 md:px-6 md:py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all cursor-pointer">
+          <button 
+            onClick={handleStartPlanning}
+            className="bg-brand-primary hover:bg-brand-primary-hover text-white font-bold text-xs md:text-sm px-5 py-2.5 md:px-6 md:py-3.5 rounded-lg shadow-md hover:shadow-lg transition-all cursor-pointer"
+          >
             Mulai Rencanakan Trip
           </button>
         </div>

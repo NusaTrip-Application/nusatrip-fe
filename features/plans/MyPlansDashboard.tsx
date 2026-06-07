@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search, ListFilter, ArrowUpDown, Plus, Calendar, Star, Bookmark, Loader2 } from "lucide-react";
 import { getMyItineraries } from "@/services/plans";
 import { getMyProfile } from "@/services/auth";
@@ -20,8 +21,16 @@ export default function MyPlansDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const router = useRouter();
+
   useEffect(() => {
     async function fetchPlans() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
@@ -36,7 +45,7 @@ export default function MyPlansDashboard() {
         const userProfileUrl = profileRes?.data?.profilePhotoUrl;
         const defaultUserAvatar = userProfileUrl 
           ? (userProfileUrl.startsWith('http') ? userProfileUrl : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${userProfileUrl}`) 
-          : "https://ui-avatars.com/api/?name=User&background=F3F3FE&color=5855E9";
+          : `https://ui-avatars.com/api/?name=${encodeURIComponent(profileRes?.data?.fullName || 'User')}&background=F3F3FE&color=5855E9`;
 
         const loadedPlans = list.map((item: any) => {
           const bannerUrl = item.bannerPhotoUrl || item.bannerImageUrl || item.bannerImage;
