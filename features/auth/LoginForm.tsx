@@ -34,7 +34,19 @@ export default function LoginForm() {
       if (response.data && response.data.accessToken) {
         localStorage.setItem("token", response.data.accessToken);
         
-        router.push("/");
+        try {
+          const payloadBase64 = response.data.accessToken.split('.')[1];
+          const decodedJson = atob(payloadBase64);
+          const decodedPayload = JSON.parse(decodedJson);
+          
+          if (decodedPayload.role === 'ADMIN') {
+            router.push("/admin/dashboard");
+          } else {
+            router.push("/");
+          }
+        } catch (e) {
+          router.push("/");
+        }
       }
     } catch (error: any) {
       setApiError(error.message || "Email atau kata sandi salah.");
