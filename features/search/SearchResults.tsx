@@ -8,6 +8,12 @@ import { getLocations, getProvinces, type Location, type ProvinceOption } from "
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&auto=format&fit=crop&q=60";
 
+const getImageUrl = (url: string | null | undefined, fallback: string) => {
+  if (!url) return fallback;
+  if (url.startsWith('http')) return url;
+  return `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${url}`;
+};
+
 export default function SearchResults() {
   const searchParams = useSearchParams();
   const rawQuery = searchParams ? searchParams.get("q") || "" : "";
@@ -210,7 +216,7 @@ export default function SearchResults() {
                   >
                     <div className="relative aspect-[4/3] w-full overflow-hidden shrink-0">
                       <img
-                        src={loc.imageUrl || FALLBACK_IMAGE}
+                        src={getImageUrl(loc.imageUrl, FALLBACK_IMAGE)}
                         alt={loc.locationName}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
