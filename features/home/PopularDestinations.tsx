@@ -8,6 +8,12 @@ import { getLocations, type Location } from "@/services/locations";
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=500&auto=format&fit=crop&q=60";
 
+const getImageUrl = (url: string | null | undefined, fallback: string) => {
+  if (!url) return fallback;
+  if (url.startsWith('http')) return url;
+  return `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${url}`;
+};
+
 export default function PopularDestinations() {
   const [destinations, setDestinations] = useState<Location[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,7 +75,7 @@ export default function PopularDestinations() {
             >
               <div className="overflow-hidden">
                 <img
-                  src={dest.imageUrl || FALLBACK_IMAGE}
+                  src={getImageUrl(dest.imageUrl, FALLBACK_IMAGE)}
                   alt={dest.locationName}
                   className="w-full h-40 md:h-48 object-cover group-hover:scale-105 transition-transform duration-500"
                   onError={(e) => {
