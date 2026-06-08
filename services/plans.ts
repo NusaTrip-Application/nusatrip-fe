@@ -111,7 +111,13 @@ export async function updateItineraryBudget(itineraryId: string, estimatedTotalB
 
 export async function getCommunityItineraries(params?: { search?: string; sort?: string; page?: number; limit?: number }) {
   try {
-    const response = await api.get('/itineraries/community', { params });
+    const apiParams = params ? {
+      search: params.search,
+      filter: params.sort,
+      page: params.page,
+      limit: params.limit,
+    } : undefined;
+    const response = await api.get('/itineraries/community', { params: apiParams });
     return response.data;
   } catch (error: any) {
     throw error.response?.data || error.message;
