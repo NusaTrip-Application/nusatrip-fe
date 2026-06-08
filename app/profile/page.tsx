@@ -323,7 +323,7 @@ export default function ProfilePage() {
             Biarkan kosong jika Anda tidak ingin mengganti password saat menyimpan perubahan profil.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-end gap-5 mb-5">
+          <div className="flex flex-col sm:flex-row items-end gap-3 mb-5">
             <div className="flex-1 w-full">
               <input type="text" autoComplete="username" className="hidden" />
               <InputField 
@@ -341,17 +341,20 @@ export default function ProfilePage() {
                 disabled={isOldPasswordVerified}
               />
             </div>
-            {!isOldPasswordVerified && (
-              <div className="pb-[22px] w-full sm:w-auto">
+            {!isOldPasswordVerified ? (
+              <div className="flex flex-col gap-1.5 shrink-0">
+                <label className="text-sm font-medium text-transparent select-none hidden sm:block">x</label>
                 <button
                   type="button"
                   onClick={verifyOldPassword}
                   disabled={isVerifyingPassword || !form.passwordLama}
-                  className="px-6 py-3 w-full sm:w-auto bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-colors disabled:opacity-50"
+                  className="px-5 py-[11px] bg-brand-primary text-white rounded-lg font-bold hover:bg-brand-primary/90 transition-colors disabled:opacity-50 text-sm whitespace-nowrap"
                 >
-                  {isVerifyingPassword ? "Memverifikasi..." : "Verifikasi"}
+                  {isVerifyingPassword ? "..." : "Verifikasi"}
                 </button>
               </div>
+            ) : (
+              <div />
             )}
           </div>
 
