@@ -13,6 +13,8 @@ const dmSerif = DM_Serif_Display({
   variable: "--font-dm-serif",
 });
 
+import NotificationModal from "@/components/NotificationModal";
+
 export const metadata: Metadata = {
   title: "NusaTrip",
   description: "Rencanakan perjalanan terbaikmu di Indonesia",
@@ -26,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className={`${plusJakarta.variable} ${dmSerif.variable} min-h-screen flex flex-col antialiased bg-bg-main text-text-body font-sans`} suppressHydrationWarning>
+        <NotificationModal />
         {children}
       </body>
     </html>

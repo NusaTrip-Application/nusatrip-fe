@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
+import { notification } from "@/lib/notification";
 import { User, Mail, Phone, Lock, Camera, Save, Eye, EyeOff, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { getMyProfile, updateMyProfile, loginUser } from "@/services/auth";
 import api from "@/lib/axios";
@@ -103,18 +104,11 @@ export default function ProfilePage() {
     namaLengkap: "", email: "", nomorTelepon: "", socialMediaInstagram: "", passwordLama: "", passwordBaru: "", konfirmasiPassword: "",
   });
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileForm, string>>>({});
-  const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" | "info" } | null>(null);
 
-  const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
-    setToast({ show: true, message, type });
-  };
 
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
+
+
+
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -148,7 +142,7 @@ export default function ProfilePage() {
         }
       } catch (error) {
         console.error("Gagal mengambil data profil:", error);
-        showToast("Sesi Anda mungkin telah habis. Silakan login kembali.", "error");
+        notification.error("Sesi Anda mungkin telah habis. Silakan login kembali.");
         router.push("/login");
       } finally {
         setIsInitialLoading(false);
@@ -178,11 +172,11 @@ export default function ProfilePage() {
 
       setIsOldPasswordVerified(true);
       setErrors(prev => ({ ...prev, passwordLama: undefined }));
-      showToast("Password lama berhasil diverifikasi. Silakan masukkan password baru.", "success");
+      notification.success("Password lama berhasil diverifikasi. Silakan masukkan password baru.");
     } catch (error: any) {
       setIsOldPasswordVerified(false);
       setErrors(prev => ({ ...prev, passwordLama: "Password lama salah" }));
-      showToast("Verifikasi gagal: Password lama salah", "error");
+      notification.error("Verifikasi gagal: Password lama salah");
     } finally {
       setIsVerifyingPassword(false);
     }
@@ -203,7 +197,7 @@ export default function ProfilePage() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      showToast("Harap periksa kembali form Anda", "error");
+      notification.error("Harap periksa kembali form Anda");
       return;
     }
 
@@ -265,7 +259,7 @@ export default function ProfilePage() {
       setForm(prev => ({ ...prev, passwordLama: "", passwordBaru: "", konfirmasiPassword: "" }));
       setAvatarFile(null);
       setIsOldPasswordVerified(false);
-      showToast("Perubahan profil berhasil disimpan ke server!", "success");
+      notification.success("Perubahan profil berhasil disimpan ke server!");
       
       setTimeout(() => {
         window.location.reload();
@@ -273,7 +267,7 @@ export default function ProfilePage() {
     } catch (error: any) {
       console.error("Save error:", error.response?.data || error);
       const errorMessage = error.response?.data?.message || error.message || "Terjadi kesalahan.";
-      showToast("Gagal menyimpan profil: " + (typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage), "error");
+      notification.error("Gagal menyimpan profil: " + (typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage));
     } finally {
       setIsSaving(false);
     }
@@ -301,7 +295,7 @@ export default function ProfilePage() {
                   setAvatarSrc(url);
                   if (file) setAvatarFile(file);
                 }} 
-                onError={(msg) => showToast(msg, "error")} 
+                onError={(msg) => notification.error(msg)} 
               />
             </div>
 
@@ -398,30 +392,7 @@ export default function ProfilePage() {
       <Footer />
       <MobileNav />
 
-      {toast && (
-        <div className="fixed top-6 right-6 z-[100] animate-in slide-in-from-top-5 fade-in duration-300">
-          <div className={`flex items-start gap-3 px-4 py-3.5 rounded-xl shadow-lg border min-w-[300px] max-w-[400px] bg-bg-surface ${toast.type === "success" ? "border-green-200" : toast.type === "error" ? "border-red-200" : "border-blue-200"}`}>
-            <div className="shrink-0 mt-0.5">
-              {toast.type === "success" ? (
-                <CheckCircle2 size={18} className="text-green-500" />
-              ) : toast.type === "error" ? (
-                <AlertCircle size={18} className="text-error" />
-              ) : (
-                <AlertCircle size={18} className="text-blue-500" />
-              )}
-            </div>
-            <div className="flex-1">
-              <p className={`text-[13px] font-bold mb-0.5 ${toast.type === "success" ? "text-green-700" : toast.type === "error" ? "text-red-700" : "text-blue-700"}`}>
-                {toast.type === "success" ? "Berhasil" : toast.type === "error" ? "Terjadi Kesalahan" : "Info"}
-              </p>
-              <p className="text-text-body text-[13px] leading-relaxed pr-2">{toast.message}</p>
-            </div>
-            <button onClick={() => setToast(null)} className="shrink-0 text-text-muted hover:text-text-heading transition-colors bg-bg-soft-gray hover:bg-bg-hover rounded-full p-1 mt-0.5">
-              <X size={14} />
-            </button>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

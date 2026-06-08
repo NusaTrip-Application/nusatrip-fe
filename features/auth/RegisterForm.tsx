@@ -1,4 +1,5 @@
 "use client";
+import { notification } from "@/lib/notification";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -36,7 +37,7 @@ export default function RegisterForm() {
         password: data.password
       });
       
-      alert("Pendaftaran berhasil! Silakan login dengan akun baru Anda.");
+      notification.success("Pendaftaran berhasil! Silakan login dengan akun baru Anda.");
       router.push("/login");
     } catch (error: any) {
       console.log("Error detail:", error);

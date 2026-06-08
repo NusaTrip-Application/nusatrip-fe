@@ -139,8 +139,17 @@ export interface PlacesSummaryResponse {
 export interface PlaceDetailResponse {
   success: boolean;
   message: string;
-  data: AdminPlace;
+  data: AdminPlace; // Reusing AdminPlace for simplicity as structure is similar
 }
+
+export const getPlaceById = async (placeId: string): Promise<PlaceDetailResponse> => {
+  try {
+    const response = await api.get(`/places/${placeId}`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+};
 
 export interface PlacePayload {
   locationId: string;

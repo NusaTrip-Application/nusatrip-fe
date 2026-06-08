@@ -1,4 +1,5 @@
 "use client";
+import { notification } from "@/lib/notification";
 
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -106,7 +107,7 @@ export default function CreatePlanForm() {
 
       const newTripId = response.data.itineraryId;
 
-      alert("Setup Rencana Perjalanan berhasil!");
+      notification.success("Setup Rencana Perjalanan berhasil!");
 
       router.push(`/my-plans/recommendation?tripId=${newTripId}`);
       
@@ -166,7 +167,7 @@ export default function CreatePlanForm() {
                 <option value="" disabled hidden>Pilih Kota Tujuan</option>
                 {locations.map((loc) => (
                   <option key={loc.locationId} value={loc.locationId}>
-                    {loc.locationName}, {loc.provinceName}
+                    {loc.locationName}
                   </option>
                 ))}
               </select>
