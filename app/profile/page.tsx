@@ -6,7 +6,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
 import { User, Mail, Phone, Lock, Camera, Save, Eye, EyeOff, X, CheckCircle2, AlertCircle } from "lucide-react";
-import { getMyProfile, updateMyProfile } from "@/services/auth";
+import { getMyProfile, updateMyProfile, loginUser } from "@/services/auth";
+import api from "@/lib/axios";
 
 function InstagramIcon({ size = 16 }: { size?: number }) {
   return (
@@ -28,7 +29,7 @@ interface ProfileForm {
   konfirmasiPassword: string;
 }
 
-function AvatarUpload({ src, onChange, onError }: { src: string; onChange: (url: string) => void; onError: (msg: string) => void }) {
+function AvatarUpload({ src, onChange, onError }: { src: string; onChange: (url: string, file?: File) => void; onError: (msg: string) => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,7 +40,7 @@ function AvatarUpload({ src, onChange, onError }: { src: string; onChange: (url:
       return;
     }
     const reader = new FileReader();
-    reader.onloadend = () => onChange(reader.result as string);
+    reader.onloadend = () => onChange(reader.result as string, file);
     reader.readAsDataURL(file);
   };
 
@@ -92,8 +93,12 @@ export default function ProfilePage() {
   const router = useRouter();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+  const [isOldPasswordVerified, setIsOldPasswordVerified] = useState(false);
+  const [originalEmail, setOriginalEmail] = useState("");
   
-  const [avatarSrc, setAvatarSrc] = useState("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80");
+  const [avatarSrc, setAvatarSrc] = useState("https://ui-avatars.com/api/?name=User&background=F3F3FE&color=5855E9");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [form, setForm] = useState<ProfileForm>({
     namaLengkap: "", email: "", nomorTelepon: "", socialMediaInstagram: "", passwordLama: "", passwordBaru: "", konfirmasiPassword: "",
   });
@@ -113,6 +118,12 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
         const response = await getMyProfile();
         const apiData = response.data; 
@@ -125,8 +136,15 @@ export default function ProfilePage() {
           socialMediaInstagram: apiData.instagramUsername || "",
         }));
 
+        setOriginalEmail(apiData.email || "");
+
         if (apiData.profilePhotoUrl) {
-          setAvatarSrc(apiData.profilePhotoUrl);
+          const finalAvatar = apiData.profilePhotoUrl.startsWith('http') 
+            ? apiData.profilePhotoUrl 
+            : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${apiData.profilePhotoUrl}`;
+          setAvatarSrc(finalAvatar);
+        } else {
+          setAvatarSrc(`https://ui-avatars.com/api/?name=${encodeURIComponent(apiData.fullName || 'User')}&background=F3F3FE&color=5855E9`);
         }
       } catch (error) {
         console.error("Gagal mengambil data profil:", error);
@@ -142,17 +160,46 @@ export default function ProfilePage() {
 
   const set = (key: keyof ProfileForm) => (val: string) => setForm((prev) => ({ ...prev, [key]: val }));
 
+  const verifyOldPassword = async () => {
+    if (!form.passwordLama) {
+      setErrors(prev => ({ ...prev, passwordLama: "Password lama wajib diisi" }));
+      return;
+    }
+    
+    setIsVerifyingPassword(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: originalEmail, password: form.passwordLama })
+      });
+      
+      if (!res.ok) throw new Error("Password lama salah");
+
+      setIsOldPasswordVerified(true);
+      setErrors(prev => ({ ...prev, passwordLama: undefined }));
+      showToast("Password lama berhasil diverifikasi. Silakan masukkan password baru.", "success");
+    } catch (error: any) {
+      setIsOldPasswordVerified(false);
+      setErrors(prev => ({ ...prev, passwordLama: "Password lama salah" }));
+      showToast("Verifikasi gagal: Password lama salah", "error");
+    } finally {
+      setIsVerifyingPassword(false);
+    }
+  };
+
   const handleSave = async () => {
     let newErrors: Partial<Record<keyof ProfileForm, string>> = {};
 
     if (form.namaLengkap.length < 3) newErrors.namaLengkap = "Nama lengkap minimal 3 karakter";
     if (form.nomorTelepon && !/^[+]?[\d\s-]{9,16}$/.test(form.nomorTelepon)) newErrors.nomorTelepon = "Format nomor telepon tidak valid";
     
-    // Password is now mandatory for any profile updates
-    if (!form.passwordLama) newErrors.passwordLama = "Password lama wajib diisi";
-    if (!form.passwordBaru) newErrors.passwordBaru = "Password baru wajib diisi";
-    if (form.passwordBaru && form.passwordBaru.length < 8) newErrors.passwordBaru = "Kata sandi minimal 8 karakter";
-    if (form.passwordBaru !== form.konfirmasiPassword) newErrors.konfirmasiPassword = "Kata sandi tidak cocok";
+    if (form.passwordBaru || form.passwordLama) {
+      if (!form.passwordLama) newErrors.passwordLama = "Password lama wajib diisi";
+      if (!form.passwordBaru) newErrors.passwordBaru = "Password baru wajib diisi";
+      if (form.passwordBaru && form.passwordBaru.length < 8) newErrors.passwordBaru = "Kata sandi minimal 8 karakter";
+      if (form.passwordBaru !== form.konfirmasiPassword) newErrors.konfirmasiPassword = "Kata sandi tidak cocok";
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -164,22 +211,69 @@ export default function ProfilePage() {
     setIsSaving(true);
 
     try {
+      let finalProfilePhotoUrl = undefined;
+
+      if (avatarFile) {
+        const presignedRes = await api.post('/media/presigned-url', {
+          filename: avatarFile.name,
+          mimetype: avatarFile.type,
+          size: avatarFile.size,
+          folder: "user"
+        });
+        
+        const uploadData = presignedRes.data?.data || presignedRes.data;
+        const uploadUrl = uploadData.uploadUrl || uploadData.presignedUrl || uploadData.url;
+        const fileKey = uploadData.tempKey || uploadData.fileKey || uploadData.key || uploadData.path;
+        
+        if (uploadUrl && fileKey) {
+          const uploadRes = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': avatarFile.type
+            },
+            body: avatarFile
+          });
+
+          if (!uploadRes.ok) {
+            throw new Error("Gagal mengunggah foto profil ke server penyimpanan.");
+          }
+
+          finalProfilePhotoUrl = fileKey;
+        } else {
+          throw new Error("Gagal mendapatkan URL unggahan yang valid.");
+        }
+      }
+
       const payload: any = {
         fullName: form.namaLengkap,
+        email: form.email,
         phoneNumber: form.nomorTelepon,
         instagramUsername: form.socialMediaInstagram
       };
       
       if (form.passwordBaru) {
         payload.password = form.passwordBaru;
+        payload.oldPassword = form.passwordLama;
+      }
+
+      if (finalProfilePhotoUrl) {
+        payload.profilePhotoUrl = finalProfilePhotoUrl;
       }
 
       await updateMyProfile(payload);
 
       setForm(prev => ({ ...prev, passwordLama: "", passwordBaru: "", konfirmasiPassword: "" }));
+      setAvatarFile(null);
+      setIsOldPasswordVerified(false);
       showToast("Perubahan profil berhasil disimpan ke server!", "success");
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error: any) {
-      showToast("Gagal menyimpan profil: " + (error.message || "Terjadi kesalahan."), "error");
+      console.error("Save error:", error.response?.data || error);
+      const errorMessage = error.response?.data?.message || error.message || "Terjadi kesalahan.";
+      showToast("Gagal menyimpan profil: " + (typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage), "error");
     } finally {
       setIsSaving(false);
     }
@@ -201,12 +295,19 @@ export default function ProfilePage() {
         <div className="bg-bg-surface border border-border-default rounded-xl shadow-sm mb-6 p-6 md:p-8">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="md:w-[220px] flex-shrink-0 border border-border-default rounded-xl bg-bg-soft-gray/40 flex items-center justify-center">
-              <AvatarUpload src={avatarSrc} onChange={setAvatarSrc} onError={(msg) => showToast(msg, "error")} />
+              <AvatarUpload 
+                src={avatarSrc} 
+                onChange={(url, file) => {
+                  setAvatarSrc(url);
+                  if (file) setAvatarFile(file);
+                }} 
+                onError={(msg) => showToast(msg, "error")} 
+              />
             </div>
 
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
               <InputField label="Nama Lengkap" icon={<User size={16} />} value={form.namaLengkap} onChange={set("namaLengkap")} placeholder="Masukkan nama lengkap" error={errors.namaLengkap} />
-              <InputField label="Alamat Email" disabled icon={<Mail size={16} />} value={form.email} onChange={set("email")} type="email" placeholder="Memuat email..." />
+              <InputField label="Alamat Email" icon={<Mail size={16} />} value={form.email} onChange={set("email")} type="email" placeholder="Masukkan alamat email" />
               <InputField label="Nomor Telepon" icon={<Phone size={16} />} value={form.nomorTelepon} onChange={set("nomorTelepon")} placeholder="0812xxxxxxxx" error={errors.nomorTelepon} />
               <InputField label="Social Media (Instagram)" icon={<InstagramIcon size={16} />} value={form.socialMediaInstagram} onChange={set("socialMediaInstagram")} placeholder="username_ig" autoComplete="off" />
             </div>
@@ -215,21 +316,68 @@ export default function ProfilePage() {
 
         <div className="bg-bg-surface border border-border-default rounded-xl shadow-sm mb-8 p-6 md:p-8">
           <div className="flex items-center gap-2 mb-1">
-            <Lock size={18} className="text-error" />
-            <h2 className="text-lg font-bold text-error">Konfirmasi & Ubah Password</h2>
+            <Lock size={18} className="text-text-muted" />
+            <h2 className="text-lg font-bold text-text-heading">Ubah Password</h2>
           </div>
-          <p className="text-error text-sm mb-6 font-medium">
-            Anda wajib memasukkan password lama dan password baru untuk menyimpan perubahan profil.
+          <p className="text-text-muted text-sm mb-6 font-medium">
+            Biarkan kosong jika Anda tidak ingin mengganti password saat menyimpan perubahan profil.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-            <input type="text" autoComplete="username" className="hidden" />
-            <InputField label="Password Lama" icon={<Lock size={16} />} value={form.passwordLama} onChange={set("passwordLama")} type="password" placeholder="Masukkan password lama" autoComplete="new-password" />
+          <div className="flex flex-col sm:flex-row items-end gap-5 mb-5">
+            <div className="flex-1 w-full">
+              <input type="text" autoComplete="username" className="hidden" />
+              <InputField 
+                label="Password Lama" 
+                icon={isOldPasswordVerified ? <CheckCircle2 size={16} className="text-success" /> : <Lock size={16} />} 
+                value={form.passwordLama} 
+                onChange={(val) => {
+                  set("passwordLama")(val);
+                  if (isOldPasswordVerified) setIsOldPasswordVerified(false);
+                }} 
+                type="password" 
+                placeholder="Masukkan password lama" 
+                autoComplete="new-password" 
+                error={errors.passwordLama}
+                disabled={isOldPasswordVerified}
+              />
+            </div>
+            {!isOldPasswordVerified && (
+              <div className="pb-[22px] w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={verifyOldPassword}
+                  disabled={isVerifyingPassword || !form.passwordLama}
+                  className="px-6 py-3 w-full sm:w-auto bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {isVerifyingPassword ? "Memverifikasi..." : "Verifikasi"}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <InputField label="Password Baru" icon={<Lock size={16} />} value={form.passwordBaru} onChange={set("passwordBaru")} type="password" placeholder="Masukkan password baru" autoComplete="new-password" disabled={!form.passwordLama} error={errors.passwordBaru} />
-            <InputField label="Konfirmasi Password" icon={<Lock size={16} />} value={form.konfirmasiPassword} onChange={set("konfirmasiPassword")} type="password" placeholder="Konfirmasi password baru" autoComplete="new-password" disabled={!form.passwordLama} error={errors.konfirmasiPassword} />
+            <InputField 
+              label="Password Baru" 
+              icon={<Lock size={16} />} 
+              value={form.passwordBaru} 
+              onChange={set("passwordBaru")} 
+              type="password" 
+              placeholder="Masukkan password baru" 
+              autoComplete="new-password" 
+              disabled={!isOldPasswordVerified} 
+              error={errors.passwordBaru} 
+            />
+            <InputField 
+              label="Konfirmasi Password" 
+              icon={<Lock size={16} />} 
+              value={form.konfirmasiPassword} 
+              onChange={set("konfirmasiPassword")} 
+              type="password" 
+              placeholder="Konfirmasi password baru" 
+              autoComplete="new-password" 
+              disabled={!isOldPasswordVerified} 
+              error={errors.konfirmasiPassword} 
+            />
           </div>
         </div>
 
@@ -247,7 +395,6 @@ export default function ProfilePage() {
       <Footer />
       <MobileNav />
 
-      {/* Toast Notification */}
       {toast && (
         <div className="fixed top-6 right-6 z-[100] animate-in slide-in-from-top-5 fade-in duration-300">
           <div className={`flex items-start gap-3 px-4 py-3.5 rounded-xl shadow-lg border min-w-[300px] max-w-[400px] bg-bg-surface ${toast.type === "success" ? "border-green-200" : toast.type === "error" ? "border-red-200" : "border-blue-200"}`}>

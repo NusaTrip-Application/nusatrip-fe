@@ -80,7 +80,6 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
         try {
           await logoutUser();
         } catch {
-          // ignore API errors — token is already cleared by logoutUser
         }
         router.push("/login");
         onClose();
@@ -145,9 +144,9 @@ export default function Header() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const [userName, setUserName] = useState("Andi Wijaya");
+  const [userName, setUserName] = useState("Memuat profil...");
   const [userAvatar, setUserAvatar] = useState(
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+    "https://ui-avatars.com/api/?name=User&background=F3F3FE&color=5855E9"
   );
 
 useEffect(() => {
@@ -162,7 +161,14 @@ useEffect(() => {
           const userData = response.data;
 
           if (userData.fullName) setUserName(userData.fullName);
-          if (userData.profilePhotoUrl) setUserAvatar(userData.profilePhotoUrl);
+          if (userData.profilePhotoUrl) {
+            const finalAvatar = userData.profilePhotoUrl.startsWith('http') 
+              ? userData.profilePhotoUrl 
+              : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${userData.profilePhotoUrl}`;
+            setUserAvatar(finalAvatar);
+          } else {
+            setUserAvatar(`https://ui-avatars.com/api/?name=${encodeURIComponent(userData.fullName || 'User')}&background=F3F3FE&color=5855E9`);
+          }
 
         } catch (error) {
           console.error("Gagal mengambil data profil di Header:", error);

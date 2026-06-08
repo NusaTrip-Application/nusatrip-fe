@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search, ListFilter, ArrowUpDown, Plus, Calendar, Star, Bookmark, Loader2 } from "lucide-react";
 import { getMyItineraries } from "@/services/plans";
+import { getMyProfile } from "@/services/auth";
 
 const formatTripRange = (startStr: string, endStr: string) => {
   if (!startStr || !endStr) return "Tanggal tidak ditentukan";
@@ -19,18 +21,40 @@ export default function MyPlansDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const router = useRouter();
+
   useEffect(() => {
     async function fetchPlans() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
         
-        const response = await getMyItineraries();
+        const [response, profileRes] = await Promise.all([
+          getMyItineraries(),
+          getMyProfile().catch(() => null)
+        ]);
+
         const list = Array.isArray(response) ? response : (response.data?.items || response.data || []);
         
+        const userProfileUrl = profileRes?.data?.profilePhotoUrl;
+        const defaultUserAvatar = userProfileUrl 
+          ? (userProfileUrl.startsWith('http') ? userProfileUrl : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${userProfileUrl}`) 
+          : `https://ui-avatars.com/api/?name=${encodeURIComponent(profileRes?.data?.fullName || 'User')}&background=F3F3FE&color=5855E9`;
+
         const loadedPlans = list.map((item: any) => {
           const bannerUrl = item.bannerPhotoUrl || item.bannerImageUrl || item.bannerImage;
           const finalBannerImage = bannerUrl ? (bannerUrl.startsWith('http') ? bannerUrl : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${bannerUrl}`) : "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=500&auto=format&fit=crop&q=60";
+
+          const rawAvatarUrl = item.account?.profilePhotoUrl || item.author?.profilePhotoUrl || item.author?.avatarUrl;
+          const finalAvatar = rawAvatarUrl 
+            ? (rawAvatarUrl.startsWith('http') ? rawAvatarUrl : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${rawAvatarUrl}`) 
+            : defaultUserAvatar;
 
           return {
             id: item.itineraryId || item.id,
@@ -42,7 +66,7 @@ export default function MyPlansDashboard() {
             reviews: item.reviewCount || null,
             saved: item.savedCount ? `${item.savedCount} saved` : null,
             img: finalBannerImage,
-            avatar: item.author?.avatarUrl || item.author?.profilePhotoUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60"
+            avatar: finalAvatar
           };
         });
 

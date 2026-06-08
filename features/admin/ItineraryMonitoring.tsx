@@ -133,14 +133,9 @@ function VisibilityBadge({ status }: { status: VisibilityStatus }) {
       className: "bg-amber-50 text-amber-600",
       dot: "bg-amber-400",
     },
-    HIDDEN: {
-      label: "Hidden",
-      className: "bg-border-default/60 text-text-muted",
-      dot: "bg-text-muted",
-    },
   };
 
-  const { label, className, dot } = config[status] ?? config.HIDDEN;
+  const { label, className, dot } = config[status] ?? config.PRIVATE;
   return (
     <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-full ${className}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
