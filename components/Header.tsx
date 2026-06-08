@@ -54,18 +54,17 @@ interface DropdownItem {
   href?: string;
   onClick?: () => void;
   danger?: boolean;
-  active?: boolean;
 }
 
 function ProfileDropdown({ onClose }: { onClose: () => void }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const items: DropdownItem[] = [
     {
       icon: <Settings size={16} />,
       label: "Pengaturan",
       href: "/profile",
-      active: true,
     },
     {
       icon: <Bookmark size={16} />,
@@ -105,14 +104,7 @@ function ProfileDropdown({ onClose }: { onClose: () => void }) {
             <Link
               href={item.href}
               onClick={onClose}
-              className={`
-                flex items-center gap-2.5 px-4 py-3 text-sm font-semibold
-                transition-colors
-                ${item.active
-                  ? "bg-brand-primary text-white"
-                  : "text-text-heading hover:bg-bg-hover"
-                }
-              `}
+              className="flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-text-heading hover:bg-bg-hover transition-colors"
             >
               {item.icon}
               {item.label}

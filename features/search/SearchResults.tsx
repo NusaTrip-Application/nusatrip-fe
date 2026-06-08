@@ -11,8 +11,9 @@ const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1537996194471-e657df97
 export default function SearchResults() {
   const searchParams = useSearchParams();
   const rawQuery = searchParams ? searchParams.get("q") || "" : "";
+  const normalizedQuery = rawQuery.toLowerCase() === "semua" ? "" : rawQuery;
 
-  const [searchQuery, setSearchQuery] = useState(rawQuery);
+  const [searchQuery, setSearchQuery] = useState(normalizedQuery);
   const [locations, setLocations] = useState<Location[]>([]);
   const [provinces, setProvinces] = useState<ProvinceOption[]>([]);
   const [selectedProvinceIds, setSelectedProvinceIds] = useState<Record<string, boolean>>({});
@@ -24,10 +25,10 @@ export default function SearchResults() {
   const gridTopRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setSearchQuery(rawQuery);
+    setSearchQuery(normalizedQuery);
     setCurrentPage(1);
     setSelectedProvinceIds({});
-  }, [rawQuery]);
+  }, [normalizedQuery]);
 
   useEffect(() => {
     const fetchProvinces = async () => {
