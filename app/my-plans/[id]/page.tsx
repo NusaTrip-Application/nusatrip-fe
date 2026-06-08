@@ -124,11 +124,13 @@ export default function ManageTripPage() {
         items = data.items || data.itineraryItems || [];
       }
       const parsedItems = items.map((item: any) => {
-        const rawImg = typeof item.place?.image === 'string' ? item.place?.image : (item.place?.image?.imageUrl || item.place?.coverImage || item.img);
+        const rawImg = typeof item.place?.image === 'string' 
+          ? item.place?.image 
+          : (item.place?.image?.imageUrl || item.place?.images?.[0]?.imageUrl || item.place?.coverImage || item.img);
         const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev';
         const processedImg = rawImg 
           ? (rawImg.startsWith('http') ? rawImg : `${storageUrl}/${rawImg}`) 
-          : "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=500&auto=format&fit=crop&q=60";
+          : "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80";
           
         return {
           id: item.itineraryItemId || item.id,
@@ -137,10 +139,10 @@ export default function ManageTripPage() {
           title: item.place?.placeName || item.place?.name || item.title || "Unknown Place",
           subtitle: item.place?.address || item.subtitle || "",
           category: item.place?.categories?.[0]?.categoryName || item.category || "General",
-          rating: item.place?.ratingValue || item.rating || 4.5,
+          rating: item.place?.ratingValue != null ? item.place.ratingValue : (item.rating != null ? item.rating : 4.5),
           img: processedImg,
           notes: item.notes || "",
-          price: item.place?.priceMax || item.price || 0
+          price: item.place?.priceMax != null ? item.place.priceMax : (item.price != null ? item.price : 0)
         };
       });
 
@@ -517,7 +519,7 @@ function TimelineItem({ data, isLast, onEdit, onDelete }: { data: any; isLast: b
         </div>
 
         <div className="relative h-40 md:h-48 w-full rounded-2xl overflow-hidden mb-3 shadow-sm group cursor-pointer">
-          <img src={data.img} alt={data.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=500&auto=format&fit=crop&q=60"; }} />
+          <img src={data.img} alt={data.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80"; }} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
           <div className="absolute top-4 left-4 bg-brand-primary text-white text-[10px] font-bold px-2.5 py-1 rounded-sm tracking-wider">{data.category}</div>
           <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
