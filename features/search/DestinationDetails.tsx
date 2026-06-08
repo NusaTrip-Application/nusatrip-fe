@@ -10,10 +10,13 @@ import {
   PlusCircle,
   Check,
   Loader2,
+  Calendar,
+  Wallet,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getLocationById, Location } from "@/services/locations";
 import { getPlaceRecommendations, RecommendedPlace } from "@/services/places";
+import { getCommunityItineraries, getSavedItineraries, toggleSaveItinerary } from "@/services/plans";
 
 interface CommunityTrip {
   title: string;
@@ -80,10 +83,12 @@ const DEFAULT_COMMUNITY_INSPIRATIONS: CommunityTrip[] = [
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&auto=format&fit=crop&q=80";
 
-const getImageUrl = (url: string | null | undefined, fallback: string) => {
+const getImageUrl = (url: any, fallback: string) => {
   if (!url) return fallback;
-  if (url.startsWith('http')) return url;
-  return `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${url}`;
+  const urlString = typeof url === 'object' && url !== null && 'imageUrl' in url ? url.imageUrl : url;
+  if (typeof urlString !== 'string') return fallback;
+  if (urlString.startsWith('http')) return urlString;
+  return `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${urlString}`;
 };
 
 export default function DestinationDetails({
@@ -97,7 +102,9 @@ export default function DestinationDetails({
   const router = useRouter();
 
   const [addedItineraries, setAddedItineraries] = useState<Record<string, boolean>>({});
-  const [savedCommunity, setSavedCommunity] = useState<Record<number, boolean>>({});
+  const [communityItineraries, setCommunityItineraries] = useState<any[]>([]);
+  const [isCommunityLoading, setIsCommunityLoading] = useState(true);
+  const [savedCommunityItineraries, setSavedCommunityItineraries] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -110,6 +117,22 @@ export default function DestinationDetails({
 
         if (locRes && locRes.success) {
           setLocationData(locRes.data);
+          
+          // Fetch community itineraries for this location
+          setIsCommunityLoading(true);
+          try {
+            const commRes = await getCommunityItineraries({
+              search: locRes.data.locationName,
+              limit: 4,
+            });
+            if (commRes && commRes.success) {
+              setCommunityItineraries(commRes.data.items || []);
+            }
+          } catch (commErr) {
+            console.error("Failed to fetch community itineraries:", commErr);
+          } finally {
+            setIsCommunityLoading(false);
+          }
         }
         if (placesRes && placesRes.success) {
           setPopularPlaces(placesRes.data.items || []);
@@ -123,13 +146,43 @@ export default function DestinationDetails({
     fetchData();
   }, [destinationSlug]);
 
-  const toggleSaveCommunity = (idx: number) => {
+  useEffect(() => {
+    const fetchSaved = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const response = await getSavedItineraries({ limit: 100 });
+        if (response.success && response.data.items) {
+          const map: Record<string, boolean> = {};
+          response.data.items.forEach((item: any) => {
+            map[item.itineraryId] = true;
+          });
+          setSavedCommunityItineraries(map);
+        }
+      } catch (error) {
+        console.error("Failed to fetch saved itineraries:", error);
+      }
+    };
+    fetchSaved();
+  }, []);
+
+  const handleToggleSaveItinerary = async (itineraryId: string) => {
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/login");
       return;
     }
-    setSavedCommunity((prev) => ({ ...prev, [idx]: !prev[idx] }));
+    try {
+      const res = await toggleSaveItinerary(itineraryId);
+      if (res.success) {
+        setSavedCommunityItineraries((prev) => ({
+          ...prev,
+          [itineraryId]: !prev[itineraryId],
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to toggle save itinerary:", err);
+    }
   };
 
   const toggleItinerary = (placeId: string) => {
@@ -345,74 +398,113 @@ export default function DestinationDetails({
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {DEFAULT_COMMUNITY_INSPIRATIONS.map((trip, idx) => (
-              <div
-                key={idx}
-                className="bg-bg-surface border border-border-default rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col group"
-              >
-                <div className="relative aspect-[4/3] w-full overflow-hidden shrink-0">
-                  <img
-                    src={trip.image}
-                    alt={trip.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <button
-                    className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white hover:bg-bg-hover flex items-center justify-center shadow-md transition-colors cursor-pointer border border-border-default"
-                    onClick={() => toggleSaveCommunity(idx)}
-                  >
-                    <Bookmark
-                      size={14}
-                      className={`transition-colors ${savedCommunity[idx]
-                          ? "text-brand-primary fill-brand-primary"
-                          : "text-brand-primary fill-transparent hover:fill-brand-primary"
-                        }`}
-                    />
-                  </button>
-                </div>
+          {isCommunityLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="animate-spin text-brand-primary" size={32} />
+            </div>
+          ) : communityItineraries.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {communityItineraries.map((trip) => (
+                <div
+                  key={trip.itineraryId}
+                  className="bg-bg-surface border border-border-default rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col group relative"
+                >
+                  <div className="relative aspect-[4/3] w-full overflow-hidden shrink-0">
+                    <Link href={`/community/${trip.itineraryId}`} className="block w-full h-full">
+                      <img
+                        src={trip.bannerImageUrl
+                          ? getImageUrl(trip.bannerImageUrl, FALLBACK_IMAGE)
+                          : "https://images.unsplash.com/photo-1549880338-65ddcdfd017b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"}
+                        alt={trip.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    </Link>
+                    <button
+                      className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white hover:bg-bg-hover flex items-center justify-center shadow-md transition-colors cursor-pointer border border-border-default z-10"
+                      onClick={() => handleToggleSaveItinerary(trip.itineraryId)}
+                    >
+                      <Bookmark
+                        size={14}
+                        className={`transition-colors ${savedCommunityItineraries[trip.itineraryId]
+                            ? "text-brand-primary fill-brand-primary"
+                            : "text-brand-primary fill-transparent hover:fill-brand-primary"
+                          }`}
+                      />
+                    </button>
+                  </div>
 
-                <div className="p-4 flex flex-col justify-between flex-grow min-h-[170px]">
-                  <div>
-                    <h3 className="text-[14px] md:text-[15px] font-semibold text-text-heading leading-snug line-clamp-1 mb-1">
-                      {trip.title}
-                    </h3>
-                    <span className="text-[11px] md:text-[12px] font-normal text-text-body block mb-3">
-                      {trip.location}
-                    </span>
-
-                    <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-[11px] md:text-[12px] font-medium mb-4 text-text-body">
-                      <div className="flex items-center gap-1 text-[#BC4800] font-bold">
-                        <Star
-                          size={13}
-                          className="text-[#BC4800] fill-[#BC4800]"
-                        />
-                        <span>{trip.rating}</span>
-                        <span className="text-text-muted font-normal">
-                          ({trip.reviews})
+                  <div className="p-4 flex flex-col justify-between flex-grow min-h-[180px]">
+                    <Link href={`/community/${trip.itineraryId}`} className="block flex-grow group-hover:no-underline">
+                      <div>
+                        <h3 className="text-[14px] md:text-[15px] font-semibold text-text-heading leading-snug line-clamp-2 mb-1 group-hover:text-brand-primary transition-colors">
+                          {trip.title}
+                        </h3>
+                        <span className="text-[11px] md:text-[12px] font-normal text-text-body block mb-2">
+                          {trip.location?.locationName || "Berbagai Destinasi"}
                         </span>
+
+                        <div className="flex items-center gap-3 mb-2 text-[11px] md:text-[12px] text-text-body">
+                          <div className="flex items-center gap-1">
+                            <Calendar size={13} className="text-text-muted" />
+                            <span>{trip.durationDays ? `${trip.durationDays} Hari` : "TBD"}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Wallet size={13} className="text-text-muted" />
+                            <span>{trip.budgetPreference === 1 ? "Hemat" : trip.budgetPreference === 2 ? "Menengah" : trip.budgetPreference === 3 ? "Mewah" : "TBD"}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-[11px] md:text-[12px] font-medium mb-3 text-text-body">
+                          <div className="flex items-center gap-1 text-[#BC4800] font-bold">
+                            <Star
+                              size={13}
+                              className="text-[#BC4800] fill-[#BC4800]"
+                            />
+                            <span>{trip.ratingValue || "0"}</span>
+                            <span className="text-text-muted font-normal">
+                              ({trip.ratingCount || 0})
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Bookmark size={13} className="text-text-muted" />
+                            <span>{trip.savedCount || 0} saved</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Bookmark size={13} className="text-text-muted" />
-                        <span>{trip.saved} saved</span>
-                      </div>
+                    </Link>
+
+                    <div className="border-t border-border-default pt-3 mt-auto flex items-center gap-2">
+                      {trip.user?.profilePhotoUrl ? (
+                        <img
+                          src={getImageUrl(trip.user.profilePhotoUrl, FALLBACK_IMAGE)}
+                          alt={trip.user?.fullName || "User"}
+                          className="w-7 h-7 rounded-full object-cover ring-1 ring-border-default"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold ring-1 ring-border-default">
+                          {(trip.user?.fullName || "User").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="text-[11.5px] md:text-[12.5px] font-semibold text-text-heading line-clamp-1">
+                        {trip.user?.fullName || "Pengguna Anonim"}
+                      </span>
                     </div>
                   </div>
-
-                  <div className="border-t border-border-default pt-3 mt-auto flex items-center gap-2">
-                    <img
-                      src={trip.avatar}
-                      alt={trip.author}
-                      className="w-7 h-7 rounded-full object-cover ring-1 ring-border-default"
-                    />
-                    <span className="text-[11.5px] md:text-[12.5px] font-semibold text-text-heading line-clamp-1">
-                      {trip.author}
-                    </span>
-                  </div>
                 </div>
+              ))}
+            </div>
+          ) : (
+            <div className="col-span-full py-12 flex flex-col items-center justify-center text-center bg-bg-surface border border-border-default rounded-2xl p-8 shadow-sm">
+              <div className="w-12 h-12 rounded-full bg-bg-soft-blue flex items-center justify-center text-brand-primary mb-3">
+                <Bookmark size={22} className="text-brand-primary" />
               </div>
-            ))}
-          </div>
+              <h3 className="text-lg font-bold text-text-heading">Belum Ada Inspirasi Komunitas</h3>
+              <p className="text-text-body text-sm mt-1 max-w-md">
+                Jadilah orang pertama yang membagikan rencana perjalanan luar biasa di {locationData?.locationName || "destinasi ini"}!
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

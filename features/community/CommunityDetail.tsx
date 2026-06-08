@@ -239,7 +239,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
         setIsDuplicating(true);
         await duplicateItinerary(itineraryId);
         alert("Itinerary berhasil diduplikat ke rencana Anda!");
-        router.push("/plans");
+        router.push("/my-plans");
       } catch (err: any) {
         alert(err.message || "Gagal menduplikat itinerary.");
       } finally {
@@ -325,7 +325,10 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
   const activeDateObj = daysArray[activeDay];
   let timelineItems: any[] = [];
   if (activeDateObj && itinerary?.itineraryItemsByDay) {
-    const activeDateKey = activeDateObj.toISOString().slice(0, 10);
+    const year = activeDateObj.getFullYear();
+    const month = String(activeDateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(activeDateObj.getDate()).padStart(2, '0');
+    const activeDateKey = `${year}-${month}-${day}`;
     timelineItems = itinerary.itineraryItemsByDay[activeDateKey] || [];
   }
 

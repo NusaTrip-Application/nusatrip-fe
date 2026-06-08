@@ -8,8 +8,8 @@ import { getLocations, type Location } from "@/services/locations";
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=500&auto=format&fit=crop&q=60";
 
-const getImageUrl = (url: string | null | undefined, fallback: string) => {
-  if (!url) return fallback;
+const getImageUrl = (url: any, fallback: string) => {
+  if (typeof url !== 'string') return fallback;
   if (url.startsWith('http')) return url;
   return `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${url}`;
 };
@@ -48,15 +48,15 @@ export default function PopularDestinations() {
         </Link>
       </div>
 
-      <div className="flex overflow-x-auto gap-5 pb-4 snap-x hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+      <div className="flex items-stretch overflow-x-auto gap-5 pb-4 snap-x hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="min-w-[220px] md:min-w-[260px] flex-none snap-start bg-bg-surface rounded-lg overflow-hidden border border-border-default shadow-sm animate-pulse"
+              className="min-w-[220px] md:min-w-[260px] flex-none snap-start bg-bg-surface rounded-lg overflow-hidden border border-border-default shadow-sm animate-pulse flex flex-col"
             >
-              <div className="w-full h-40 md:h-48 bg-bg-soft-gray" />
-              <div className="p-5 space-y-2">
+              <div className="w-full h-40 md:h-48 bg-bg-soft-gray shrink-0" />
+              <div className="p-5 space-y-2 flex-grow">
                 <div className="h-5 bg-bg-soft-gray rounded w-3/4" />
                 <div className="h-4 bg-bg-soft-gray rounded w-1/2" />
               </div>
@@ -71,9 +71,9 @@ export default function PopularDestinations() {
             <Link
               key={dest.locationId}
               href={`/search/${dest.locationId}`}
-              className="min-w-[220px] md:min-w-[260px] flex-none snap-start bg-bg-surface rounded-lg overflow-hidden border border-border-default shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer block"
+              className="min-w-[220px] md:min-w-[260px] flex-none snap-start bg-bg-surface rounded-lg overflow-hidden border border-border-default shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer flex flex-col"
             >
-              <div className="overflow-hidden">
+              <div className="overflow-hidden h-40 md:h-48 w-full shrink-0">
                 <img
                   src={getImageUrl(dest.imageUrl, FALLBACK_IMAGE)}
                   alt={dest.locationName}
@@ -83,14 +83,16 @@ export default function PopularDestinations() {
                   }}
                 />
               </div>
-              <div className="p-5">
-                <h3 className="text-[20px] font-semibold leading-[1.4] -tracking-[0.01em] text-text-heading mb-1">
-                  {dest.locationName}
-                </h3>
-                <p className="text-[14px] font-medium leading-[1.5] text-text-body flex items-center gap-1.5">
-                  <MapPin size={16} className="text-text-muted" />
-                  {dest.province.provinceName}
-                </p>
+              <div className="p-5 flex-grow flex flex-col justify-between">
+                <div>
+                  <h3 className="text-[20px] font-semibold leading-[1.4] -tracking-[0.01em] text-text-heading mb-1">
+                    {dest.locationName}
+                  </h3>
+                  <p className="text-[14px] font-medium leading-[1.5] text-text-body flex items-center gap-1.5">
+                    <MapPin size={16} className="text-text-muted" />
+                    {dest.province.provinceName}
+                  </p>
+                </div>
               </div>
             </Link>
           ))
