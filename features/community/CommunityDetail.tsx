@@ -23,6 +23,7 @@ import {
   getSavedItineraries,
 } from "@/services/plans";
 import { getReviewsByItineraryId, createReview } from "@/services/reviews";
+import { notification } from "@/lib/notification";
 
 interface CommunityDetailProps {
   itineraryId: string;
@@ -176,7 +177,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
             setReviews(reviewsRes.data.items);
             setReviewsMetadata(reviewsRes.data.metadata);
             setOthersByAuthor(othersRes.data.items || []);
-            
+
             // Check if current itinerary is saved
             const isItinSaved = savedRes.success && savedRes.data?.items?.some(
               (item: any) => item.itineraryId === itineraryId
@@ -219,13 +220,13 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
         await toggleSaveItinerary(itineraryId);
         setIsSaved(true);
         setSummary((prev: any) => ({ ...prev, totalSaves: (prev.totalSaves || 0) + 1 }));
-        alert("Itinerary berhasil disimpan ke referensi!");
+        notification.success("Itinerary berhasil disimpan ke referensi!");
       } catch (err: any) {
         if (err.message && err.message.includes("already saved")) {
-          alert("Itinerary sudah disimpan di referensi.");
+          notification.error("Itinerary sudah disimpan di referensi.");
           setIsSaved(true);
         } else {
-          alert(err.message || "Gagal menyimpan itinerary.");
+          notification.error(err.message || "Gagal menyimpan itinerary.");
         }
       } finally {
         setIsSaving(false);
@@ -238,10 +239,10 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
       try {
         setIsDuplicating(true);
         await duplicateItinerary(itineraryId);
-        alert("Itinerary berhasil diduplikat ke rencana Anda!");
+        notification.success("Itinerary berhasil diduplikat ke rencana Anda!");
         router.push("/my-plans");
       } catch (err: any) {
-        alert(err.message || "Gagal menduplikat itinerary.");
+        notification.error(err.message || "Gagal menduplikat itinerary.");
       } finally {
         setIsDuplicating(false);
       }
@@ -251,7 +252,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
   const handleSubmitReview = () => {
     requireAuth(async () => {
       if (reviewRating === 0) {
-        alert("Silakan pilih rating bintang terlebih dahulu.");
+        notification.error("Silakan pilih rating bintang terlebih dahulu.");
         return;
       }
       try {
@@ -260,7 +261,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
           rating: reviewRating,
           comment: reviewText.trim() || undefined,
         });
-        alert("Ulasan Anda berhasil dikirim!");
+        notification.success("Ulasan Anda berhasil dikirim!");
         setIsReviewModalOpen(false);
         setReviewRating(0);
         setReviewText("");
@@ -269,7 +270,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
         const summaryRes = await getCommunitySummary(itineraryId);
         setSummary(summaryRes.data);
       } catch (err: any) {
-        alert(err.message || "Gagal mengirimkan ulasan.");
+        notification.error(err.message || "Gagal mengirimkan ulasan.");
       } finally {
         setIsSubmittingReview(false);
       }
@@ -385,11 +386,10 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
                 <button
                   key={idx}
                   onClick={() => setActiveDay(idx)}
-                  className={`flex flex-col items-center justify-center min-w-[80px] md:min-w-[90px] py-3 px-2 rounded-xl border transition-all snap-start ${
-                    isActive
+                  className={`flex flex-col items-center justify-center min-w-[80px] md:min-w-[90px] py-3 px-2 rounded-xl border transition-all snap-start ${isActive
                       ? "bg-[#2563EB] border-[#2563EB] text-white shadow-sm"
                       : "bg-bg-surface border-border-default text-text-body hover:bg-bg-hover"
-                  }`}
+                    }`}
                 >
                   <span className={`text-[13px] md:text-[14px] font-bold mb-0.5 ${isActive ? "text-white" : "text-text-heading"}`}>
                     Hari {idx + 1}
@@ -463,14 +463,14 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
         <aside className="lg:w-[340px] shrink-0">
           <div className="bg-bg-surface border border-border-default rounded-2xl p-6 mb-6 shadow-sm">
             <h3 className="text-lg font-bold text-text-heading mb-4">Tindakan Cepat</h3>
-            <button 
+            <button
               disabled={isDuplicating}
               onClick={handleDuplicate}
               className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-[14px] py-3 px-4 rounded-xl flex items-center justify-center gap-2 mb-3 transition-colors shadow-sm cursor-pointer"
             >
               <Copy size={18} /> {isDuplicating ? "Menduplikat..." : "Duplikat ke Rencana Saya"}
             </button>
-            <button 
+            <button
               disabled={isSaved || isSaving}
               onClick={handleSave}
               className="w-full border-2 border-[#2563EB] text-[#2563EB] hover:bg-[#2563EB]/5 disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent font-bold text-[14px] py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 mb-4 transition-colors cursor-pointer"
@@ -550,7 +550,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
               </span>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => requireAuth(() => setIsReviewModalOpen(true))}
             className="bg-[#2563EB] text-white font-semibold text-[14px] py-2.5 px-6 rounded-lg hover:bg-blue-700 transition-colors shadow-sm self-start md:self-auto w-full md:w-auto cursor-pointer"
           >
@@ -593,7 +593,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
         {/* Pagination */}
         {reviewsMetadata.totalPages > 1 && (
           <div className="flex justify-center mt-12 gap-2">
-            <button 
+            <button
               disabled={!reviewsMetadata.hasPrevPage}
               onClick={() => setReviewPage((p) => p - 1)}
               className="w-9 h-9 rounded-full border border-border-default flex items-center justify-center text-text-muted hover:bg-bg-hover disabled:opacity-50 disabled:hover:bg-transparent transition-colors cursor-pointer"
@@ -607,17 +607,16 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
                 <button
                   key={pg}
                   onClick={() => setReviewPage(pg)}
-                  className={`w-9 h-9 rounded-full font-semibold flex items-center justify-center text-[14px] cursor-pointer ${
-                    isCurrent
+                  className={`w-9 h-9 rounded-full font-semibold flex items-center justify-center text-[14px] cursor-pointer ${isCurrent
                       ? "bg-[#2563EB] text-white"
                       : "border border-border-default text-text-body hover:bg-bg-hover transition-colors"
-                  }`}
+                    }`}
                 >
                   {pg}
                 </button>
               );
             })}
-            <button 
+            <button
               disabled={!reviewsMetadata.hasNextPage}
               onClick={() => setReviewPage((p) => p + 1)}
               className="w-9 h-9 rounded-full border border-border-default flex items-center justify-center text-text-muted hover:bg-bg-hover disabled:opacity-50 disabled:hover:bg-transparent transition-colors cursor-pointer"
@@ -630,18 +629,18 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
 
       {/* Review Modal */}
       {isReviewModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
           onClick={() => setIsReviewModalOpen(false)}
         >
-          <div 
+          <div
             className="bg-[#F8FAFC] w-full max-w-[560px] rounded-xl border border-border-default p-6 md:p-8 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-2xl font-serif font-bold text-text-heading mb-4">
               Tulis Ulasan Anda
             </h2>
-            
+
             <div className="flex items-center gap-2 mb-6">
               <span className="text-[14px] text-text-body font-medium">Beri rating:</span>
               <div className="flex gap-1">
@@ -656,11 +655,10 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
                   >
                     <Star
                       size={20}
-                      className={`transition-colors ${
-                        star <= (hoverRating || reviewRating)
+                      className={`transition-colors ${star <= (hoverRating || reviewRating)
                           ? "fill-[#F59E0B] text-[#F59E0B]"
                           : "text-text-muted stroke-[1.5px] fill-transparent"
-                      }`}
+                        }`}
                     />
                   </button>
                 ))}
@@ -675,7 +673,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
             />
 
             <div className="flex justify-end gap-3">
-              <button 
+              <button
                 onClick={() => {
                   setIsReviewModalOpen(false);
                   setReviewRating(0);
@@ -685,7 +683,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
               >
                 Batal
               </button>
-              <button 
+              <button
                 disabled={isSubmittingReview}
                 onClick={handleSubmitReview}
                 className="bg-[#2563EB] text-white font-semibold text-[14px] py-2.5 px-6 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors shadow-md cursor-pointer"

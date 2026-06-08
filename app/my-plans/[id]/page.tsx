@@ -138,7 +138,7 @@ export default function ManageTripPage() {
           date: item.visitDate ? new Date(item.visitDate).toISOString().split('T')[0] : item.date,
           title: item.place?.placeName || item.place?.name || item.title || "Unknown Place",
           subtitle: item.place?.address || item.subtitle || "",
-          category: item.place?.categories?.[0]?.categoryName || item.category || "General",
+          category: (typeof item.place?.categories?.[0] === 'string' ? item.place.categories[0] : item.place?.categories?.[0]?.categoryName) || item.category || "General",
           rating: item.place?.ratingValue != null ? item.place.ratingValue : (item.rating != null ? item.rating : 4.5),
           img: processedImg,
           notes: item.notes || "",

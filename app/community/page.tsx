@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import MobileNav from "@/components/MobileNav";
 import { Search, Calendar, Wallet, Star, Bookmark, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { getCommunityItineraries, getSavedItineraries, toggleSaveItinerary } from "@/services/plans";
+import { notification } from "@/lib/notification";
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"Popular" | "Recent">("Popular");
@@ -66,11 +68,18 @@ export default function CommunityPage() {
       router.push("/login");
       return;
     }
-    setSavedItems((prev) => ({ ...prev, [id]: !prev[id] }));
+    const isCurrentlySaved = !!savedItems[id];
+    setSavedItems((prev) => ({ ...prev, [id]: !isCurrentlySaved }));
     try {
       await toggleSaveItinerary(id);
+      if (!isCurrentlySaved) {
+        notification.success("Itinerary berhasil disimpan.");
+      } else {
+        notification.success("Itinerary dihapus dari simpanan.");
+      }
     } catch (error) {
-      setSavedItems((prev) => ({ ...prev, [id]: !prev[id] }));
+      setSavedItems((prev) => ({ ...prev, [id]: isCurrentlySaved }));
+      notification.error("Gagal menyimpan perubahan. Silakan coba lagi.");
       console.error("Failed to toggle save:", error);
     }
   };
@@ -90,7 +99,7 @@ export default function CommunityPage() {
     <div className="min-h-screen flex flex-col bg-[var(--color-bg-main)] text-[var(--color-text-body)]">
       <Header />
 
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 md:px-8 py-8 md:py-12">
+      <main className="flex-grow max-w-7xl w-full mx-auto px-4 md:px-8 py-8 md:py-12 mb-28 md:mb-0">
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-[var(--color-text-heading)] mb-3">
             Inspirasi Perjalanan dari Komunitas
@@ -215,11 +224,19 @@ export default function CommunityPage() {
                 <div className="flex items-center gap-4 mb-3">
                   <div className="flex items-center gap-1.5 text-sm text-[var(--color-text-body)]">
                     <Calendar size={16} />
-                    <span>{item.durationDays ? `${item.durationDays} Hari` : "Beberapa Hari"}</span>
+                    <span>
+                      {item.startDate && item.endDate
+                        ? `${Math.ceil((new Date(item.endDate).getTime() - new Date(item.startDate).getTime()) / (1000 * 3600 * 24)) + 1} Hari`
+                        : "Beberapa Hari"}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm text-[var(--color-text-body)]">
                     <Wallet size={16} />
-                    <span>{item.budgetPreference === 1 ? "Hemat" : item.budgetPreference === 2 ? "Menengah" : item.budgetPreference === 3 ? "Mewah" : "TBD"}</span>
+                    <span>
+                      {item.budgetPreference
+                        ? `Rp ${item.budgetPreference.toLocaleString("id-ID")}`
+                        : "TBD"}
+                    </span>
                   </div>
                 </div>
 
@@ -288,6 +305,7 @@ export default function CommunityPage() {
       </main>
 
       <Footer />
+      <MobileNav />
     </div>
   );
 }

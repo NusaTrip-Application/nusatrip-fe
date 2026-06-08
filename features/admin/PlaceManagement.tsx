@@ -850,7 +850,7 @@ export default function PlaceManagement() {
   const [locations, setLocations] = useState<LocationOption[]>([]);
   const [categories, setCategories] = useState<PlaceCategory[]>([]);
   
-  const ITEMS_PER_PAGE = 12; // Base on schema limit default
+  const ITEMS_PER_PAGE = 5; // Base on schema limit default
 
   // Fetch initial options
   useEffect(() => {
@@ -986,7 +986,7 @@ export default function PlaceManagement() {
               <Settings className="w-5 h-5 text-text-body" />
           </button>
           <div className="w-10 h-10 rounded-full bg-border-default overflow-hidden">
-              <img src="https://i.pravatar.cc/80?img=12" alt="Admin" className="w-full h-full object-cover" />
+              <img src="https://ui-avatars.com/api/?name=Admin&background=F3F3FE&color=5855E9" alt="Admin" className="w-full h-full object-cover" />
           </div>
         </div>
       </div>

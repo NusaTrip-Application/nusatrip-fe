@@ -26,6 +26,14 @@ export interface AdminReview {
     fullName: string;
     profilePhotoUrl: string | null;
   };
+  reviewer?: {
+    fullName: string;
+    profilePhotoUrl?: string | null;
+  };
+  user?: {
+    fullName: string;
+    profilePhotoUrl?: string | null;
+  };
 }
 
 export interface AdminReviewsMetadata {

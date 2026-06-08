@@ -6,22 +6,22 @@ import { useRouter } from "next/navigation";
 
 const slides = [
   {
-    img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1000&auto=format&fit=crop&q=60",
+    img: "/images/hero/labuanbajo.jpg",
     title: "Labuan Bajo, Nusa Tenggara Timur",
     desc: "Keindahan alam yang memukau untuk petualangan tak terlupakan",
   },
   {
-    img: "https://images.unsplash.com/photo-1584824486516-0555a07fc511?w=1000&auto=format&fit=crop&q=60",
+    img: "/images/hero/candiprambanan.jpg",
     title: "Candi Prambanan, Yogyakarta",
     desc: "Situs bersejarah dengan arsitektur memukau",
   },
   {
-    img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1000&auto=format&fit=crop&q=60",
+    img: "/images/hero/pantaikuta.jpg",
     title: "Pantai Kuta, Bali",
     desc: "Destinasi selancar dan pemandangan matahari terbenam",
   },
   {
-    img: "https://images.unsplash.com/photo-1583130190518-e397cff177ce?w=1000&auto=format&fit=crop&q=60",
+    img: "/images/hero/kawahputih.jpg",
     title: "Kawah Putih, Bandung",
     desc: "Danau kawah vulkanik yang indah",
   },

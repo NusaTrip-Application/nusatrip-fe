@@ -113,7 +113,7 @@ export default function AdminSidebar() {
         <div className="flex items-center gap-3 p-2 rounded-lg">
           <div className="w-10 h-10 rounded-full bg-border-default border border-border-default overflow-hidden flex-shrink-0">
             <img
-              src="https://i.pravatar.cc/80?img=12"
+              src="https://ui-avatars.com/api/?name=Admin&background=F3F3FE&color=5855E9"
               alt="Admin"
               className="w-full h-full object-cover"
             />

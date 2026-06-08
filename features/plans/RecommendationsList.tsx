@@ -4,8 +4,9 @@ import React, { useState, useEffect } from "react";
 import { notification } from "@/lib/notification";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, ChevronLeft, Star, List, LayoutGrid, PlusCircle, X, MapPin, Clock, Globe, Phone } from "lucide-react";
+import { ChevronRight, ChevronLeft, Star, List, LayoutGrid, PlusCircle, X, MapPin, Clock, Globe, Phone, Ticket } from "lucide-react";
 import { getRecommendationsByDestination, getItineraryById, addItineraryItem } from "@/services/plans"; 
+import { getPlaceById } from "@/services/places";
 
 const filters = ["All Spots", "NATURE", "CULTURE_HISTORY", "SHOPPING", "FOOD_DRINKS", "ENTERTAINMENT", "WELLNESS", "FAMILY", "ADVENTURE"];
 
@@ -90,18 +91,34 @@ export default function RecommendationsList() {
   const [chosenTime, setChosenTime] = useState("09:00");
   const [notes, setNotes] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const mapPlace = (p: any) => {
-    const rawImg = typeof p.image === 'string' ? p.image : p.image?.imageUrl;
     const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev';
-    const processedImg = rawImg 
-      ? (rawImg.startsWith('http') ? rawImg : `${storageUrl}/${rawImg}`) 
-      : null;
+    
+    let imagesArr: string[] = [];
+    if (p.images && Array.isArray(p.images)) {
+      imagesArr = p.images.map((img: any) => {
+        const url = typeof img === 'string' ? img : img.imageUrl;
+        return url ? (url.startsWith('http') ? url : `${storageUrl}/${url.replace(/^\/+/, '')}`) : '';
+      }).filter(Boolean);
+    } else if (p.image) {
+      const url = typeof p.image === 'string' ? p.image : p.image.imageUrl;
+      if (url) imagesArr = [url.startsWith('http') ? url : `${storageUrl}/${url.replace(/^\/+/, '')}`];
+    } else if (p.coverImage) {
+      imagesArr = [p.coverImage];
+    } else if (p.img) {
+      imagesArr = [p.img];
+    }
+
+    if (imagesArr.length === 0) {
+      imagesArr = ["https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80"];
+    }
 
     return {
       id: p.placeId || p.id,
       name: p.placeName || p.name,
-      category: p.categories && p.categories.length > 0 ? p.categories[0].categoryName : (p.categoryName || p.category || "NATURE"),
+      categories: p.categories?.map((c: any) => c.categoryName) || (p.categoryName || p.category ? [p.categoryName || p.category] : ["NATURE"]),
       rating: p.ratingValue || p.rating || 4.5,
       price: (() => {
         if (p.priceMin != null && p.priceMax != null) {
@@ -124,7 +141,8 @@ export default function RecommendationsList() {
         }
         return p.price || "Gratis";
       })(),
-      img: processedImg || p.coverImage || p.img || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80",
+      img: imagesArr[0],
+      images: imagesArr,
       desc: p.shortDescription || p.description || p.desc || "Tempat wisata menarik untuk dikunjungi.",
       address: p.address || "Indonesia",
       hours: p.operationalHours ? { weekday: p.operationalHours, weekend: p.operationalHours } : (p.hours || { weekday: "08:00 - 17:00", weekend: "08:00 - 18:00" }),
@@ -179,9 +197,27 @@ export default function RecommendationsList() {
     fetchData();
   }, [tripId]);
 
-  const openDetailModal = (place: any) => {
+  const openDetailModal = async (place: any) => {
     setSelectedPlace(place);
     setModalType("detail");
+    setCurrentImageIndex(0);
+
+    try {
+      const fullPlace = await getPlaceById(place.id);
+      if (fullPlace && fullPlace.data && fullPlace.data.images) {
+        const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev';
+        const fullImages = fullPlace.data.images.map((img: any) => {
+          const url = typeof img === 'string' ? img : img.imageUrl;
+          return url ? (url.startsWith('http') ? url : `${storageUrl}/${url.replace(/^\/+/, '')}`) : '';
+        }).filter(Boolean);
+        
+        if (fullImages.length > 0) {
+           setSelectedPlace((prev: any) => prev ? {...prev, images: fullImages} : prev);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch full place details for images", err);
+    }
   };
 
   const openAddModal = (place: any, e: React.MouseEvent) => {
@@ -210,7 +246,7 @@ export default function RecommendationsList() {
 
   const filteredPlaces = places.filter((place) => {
     if (activeFilter === "All Spots") return true;
-    return place.category.toUpperCase() === activeFilter.toUpperCase();
+    return place.categories.some((cat: string) => cat.toUpperCase() === activeFilter.toUpperCase());
   });
 
   const totalPages = Math.ceil(filteredPlaces.length / itemsPerPage);
@@ -304,9 +340,18 @@ export default function RecommendationsList() {
             >
               <div className="relative h-48 overflow-hidden">
                 <img src={place.img} alt={place.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80"; }} />
-                <span className="absolute top-3 left-3 bg-brand-primary text-text-light text-[10px] font-bold px-2.5 py-1 rounded-sm tracking-wider">
-                  {place.category}
-                </span>
+                <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 max-w-[85%]">
+                  {place.categories.slice(0, 2).map((cat: string, idx: number) => (
+                    <span key={idx} className="bg-brand-primary/95 text-text-light text-[10px] font-bold px-2.5 py-1 rounded-sm tracking-wider shadow-sm">
+                      {cat}
+                    </span>
+                  ))}
+                  {place.categories.length > 2 && (
+                    <span className="bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-sm tracking-wider shadow-sm">
+                      +{place.categories.length - 2}
+                    </span>
+                  )}
+                </div>
               </div>
               
               <div className="p-5 flex flex-col flex-grow">
@@ -381,67 +426,115 @@ export default function RecommendationsList() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
 
           {modalType === "detail" && selectedPlace && (
-            <div className="bg-bg-surface w-full max-w-4xl rounded-2xl overflow-hidden shadow-xl flex flex-col md:flex-row relative animate-in fade-in zoom-in-95 duration-200">
-              <button onClick={closeModal} className="absolute top-4 right-4 z-10 p-1.5 bg-white/80 backdrop-blur rounded-full text-text-heading hover:bg-white transition-colors">
-                <X size={20} />
-              </button>
+            <div className="bg-white w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row relative animate-in fade-in zoom-in-95 duration-200 h-[80vh]">
               
-              <div className="md:w-1/2 h-64 md:h-auto">
-                <img src={selectedPlace.img} alt={selectedPlace.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80"; }} />
+              {/* Left Side: Image */}
+              <div className="md:w-1/2 relative bg-black group h-64 md:h-full flex-shrink-0">
+                <img 
+                  src={selectedPlace.images[currentImageIndex] || selectedPlace.img} 
+                  alt={selectedPlace.name} 
+                  className="w-full h-full object-cover transition-all duration-300" 
+                  onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80"; }} 
+                />
+                
+                {selectedPlace.images?.length > 1 && (
+                  <>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => prev === 0 ? selectedPlace.images.length - 1 : prev - 1); }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/30 hover:bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm cursor-pointer"
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => prev === selectedPlace.images.length - 1 ? 0 : prev + 1); }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/30 hover:bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm cursor-pointer"
+                    >
+                      <ChevronRight size={24} />
+                    </button>
+                    <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
+                      {selectedPlace.images.map((_: any, i: number) => (
+                        <button 
+                          key={i} 
+                          onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(i); }}
+                          className={`w-2 h-2 rounded-full transition-all cursor-pointer ${i === currentImageIndex ? "bg-white w-4" : "bg-white/50 hover:bg-white/80"}`}
+                        ></button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
               
-              <div className="md:w-1/2 p-6 md:p-8 flex flex-col max-h-[80vh] overflow-y-auto">
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-2xl font-serif font-bold text-text-heading">{selectedPlace.name}</h2>
-                  <span className="bg-brand-primary text-text-light text-[10px] font-bold px-2 py-0.5 rounded-sm">{selectedPlace.category}</span>
+              {/* Right Side: Info */}
+              <div className="md:w-1/2 p-6 md:p-10 flex flex-col relative overflow-y-auto custom-scrollbar">
+                <button onClick={closeModal} className="absolute top-6 right-6 p-2 rounded-full hover:bg-bg-hover text-text-heading bg-bg-surface shadow-sm border border-border-default z-10 transition-colors cursor-pointer">
+                  <X size={20} />
+                </button>
+
+                <div className="flex flex-wrap items-center gap-3 mb-2 pr-12">
+                  <h2 className="font-serif text-[32px] font-bold text-text-heading leading-tight">{selectedPlace.name}</h2>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {selectedPlace.categories?.map((cat: string, idx: number) => (
+                      <span key={idx} className="bg-brand-primary text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 
-                <div className="flex items-center gap-4 text-[13px] font-medium text-text-muted mb-6">
-                  <span className="flex items-center gap-1 text-brand-warm font-bold"><Star size={14} className="fill-brand-warm" /> {selectedPlace.rating} (1.280 Ulasan)</span>
-                  <span className="flex items-center gap-1"><MapPin size={14} /> {selectedPlace.address}</span>
+                <div className="flex items-center gap-2 text-sm text-text-muted mb-4">
+                  <Star size={16} className="fill-brand-warm text-brand-warm" />
+                  <span className="font-bold text-text-heading text-base">{selectedPlace.rating}</span>
+                  <span>(1.280 Ulasan)</span>
                 </div>
 
-                <div className="bg-bg-main border border-border-default rounded-lg p-4 mb-6 flex items-center gap-3">
-                  <div className="bg-brand-primary/10 p-2 rounded-full text-brand-primary"><Clock size={18} /></div>
-                  <div>
-                    <p className="text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1">Estimasi Harga</p>
-                    <p className="text-[14px] font-bold text-text-heading">{selectedPlace.price}</p>
-                  </div>
+                <div className="flex items-start gap-2 text-text-heading text-sm mb-8">
+                  <MapPin size={18} className="flex-shrink-0 text-text-muted" />
+                  <span>{selectedPlace.address || "Alamat belum tersedia"}</span>
                 </div>
 
                 <div className="mb-6">
-                  <p className="text-[11px] font-bold text-text-muted uppercase tracking-wider mb-2">Jam Operasional</p>
-                  <div className="flex justify-between text-[13px] font-medium text-text-body mb-1">
-                    <span>Senin - Jumat</span> 
-                    <span className="text-brand-primary font-bold">{selectedPlace.hours?.weekday}</span>
-                  </div>
-                  <div className="flex justify-between text-[13px] font-medium text-text-body">
-                    <span>Sabtu - Minggu</span> 
-                    <span className="text-brand-primary font-bold">{selectedPlace.hours?.weekend}</span>
+                  <h3 className="text-xs font-bold text-text-heading mb-3 uppercase tracking-wide">Estimasi Harga</h3>
+                  <div className="bg-bg-soft-blue border border-brand-primary/20 rounded-xl p-4 flex items-center gap-3">
+                    <Ticket size={20} className="text-brand-primary" />
+                    <span className="text-text-heading font-medium text-[15px]">{selectedPlace.price}</span>
                   </div>
                 </div>
 
-                <div className="flex gap-4 mb-6">
-                  <a href={selectedPlace.website} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 text-text-muted hover:text-brand-primary transition-colors cursor-pointer">
-                    <div className="w-10 h-10 rounded-full border border-border-strong flex items-center justify-center"><Globe size={18} /></div>
+                <div className="mb-8">
+                  <h3 className="text-xs font-bold text-text-heading mb-3 uppercase tracking-wide">Jam Operasional</h3>
+                  <div className="bg-bg-soft-blue border border-border-default rounded-xl p-4">
+                    <div className="flex justify-between items-center text-sm py-1">
+                      <span className="text-text-muted">Senin - Jumat</span>
+                      <span className="text-brand-primary font-medium">{selectedPlace.hours?.weekday}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm py-1">
+                      <span className="text-text-muted">Sabtu - Minggu</span>
+                      <span className="text-brand-primary font-medium">{selectedPlace.hours?.weekend}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 mb-8">
+                  <a href={selectedPlace.website} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1.5 text-text-muted hover:text-brand-primary transition-colors cursor-pointer">
+                    <div className="w-12 h-12 rounded-full border border-border-strong flex items-center justify-center"><Globe size={20} /></div>
                     <span className="text-[11px] font-semibold">Website</span>
                   </a>
-                  <a href={`tel:${selectedPlace.phone}`} className="flex flex-col items-center gap-1 text-text-muted hover:text-brand-primary transition-colors cursor-pointer">
-                    <div className="w-10 h-10 rounded-full border border-border-strong flex items-center justify-center"><Phone size={18} /></div>
+                  <a href={`tel:${selectedPlace.phone}`} className="flex flex-col items-center gap-1.5 text-text-muted hover:text-brand-primary transition-colors cursor-pointer">
+                    <div className="w-12 h-12 rounded-full border border-border-strong flex items-center justify-center"><Phone size={20} /></div>
                     <span className="text-[11px] font-semibold">Call</span>
                   </a>
                 </div>
 
                 <div className="mb-8">
-                  <p className="text-[11px] font-bold text-text-muted uppercase tracking-wider mb-2">Deskripsi</p>
-                  <p className="text-[13px] text-text-body leading-relaxed font-medium">{selectedPlace.desc}</p>
+                  <h3 className="text-xs font-bold text-text-heading mb-3 uppercase tracking-wide">Deskripsi</h3>
+                  <p className="text-[14px] text-text-body leading-relaxed">{selectedPlace.desc}</p>
                 </div>
 
-                <div className="mt-auto flex gap-3 pt-4 border-t border-border-default">
-                  <button onClick={(e) => { closeModal(); openAddModal(selectedPlace, e as any); }} className="flex-1 bg-brand-primary hover:bg-brand-primary-hover text-text-light font-bold text-[14px] py-3 rounded-xl transition-colors flex justify-center items-center gap-2">
+                <div className="mt-auto flex gap-3 pt-6 border-t border-border-default">
+                  <button onClick={(e) => { closeModal(); openAddModal(selectedPlace, e as any); }} className="flex-1 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-[14px] py-3.5 rounded-xl transition-colors flex justify-center items-center gap-2 cursor-pointer shadow-sm">
                     <PlusCircle size={18} /> Tambah ke Rencana
                   </button>
-                  <button onClick={closeModal} className="px-6 border border-border-strong text-text-heading font-bold text-[14px] rounded-xl hover:bg-bg-hover transition-colors">
+                  <button onClick={closeModal} className="px-8 border border-border-default text-text-heading font-bold text-[14px] rounded-xl hover:bg-bg-hover transition-colors cursor-pointer">
                     Tutup
                   </button>
                 </div>

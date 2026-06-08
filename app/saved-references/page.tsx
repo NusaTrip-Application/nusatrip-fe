@@ -233,7 +233,7 @@ export default function SavedReferencesPage() {
             days = Math.ceil(
               (new Date(item.endDate).getTime() - new Date(item.startDate).getTime()) /
                 (1000 * 3600 * 24)
-            );
+            ) + 1;
           }
           if (!days || days < 1) days = 1;
 
@@ -243,9 +243,9 @@ export default function SavedReferencesPage() {
             location: item.location?.name || item.location?.locationName || "Lokasi tidak ditentukan",
             province: item.location?.province || "Indonesia",
             days: days,
-            price: item.estimatedTotalBudget
-              ? `Rp ${item.estimatedTotalBudget.toLocaleString("id-ID")}`
-              : "Gratis",
+            price: item.estimatedTotalBudget || item.budgetPreference
+              ? `Rp ${(item.estimatedTotalBudget || item.budgetPreference).toLocaleString("id-ID")}`
+              : "TBD",
             rating: item.ratingValue || item.rating || 0,
             reviewCount: item.ratingCount || item.reviewCount || 0,
             savedCount: item.savedCount ? `${item.savedCount}` : "0",
