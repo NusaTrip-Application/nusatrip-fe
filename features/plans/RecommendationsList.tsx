@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ChevronRight, ChevronLeft, Star, List, LayoutGrid, PlusCircle, X, MapPin, Clock, Globe, Phone } from "lucide-react";
 import { getRecommendationsByDestination, getItineraryById, addItineraryItem } from "@/services/plans"; 
 
-const filters = ["All Spots", "Nature", "Culinary", "Architecture", "Art & Culture", "Family"];
+const filters = ["All Spots", "NATURE", "CULTURE_HISTORY", "SHOPPING", "FOOD_DRINKS", "ENTERTAINMENT", "WELLNESS", "FAMILY", "ADVENTURE"];
 
 
 
@@ -103,8 +103,28 @@ export default function RecommendationsList() {
       name: p.placeName || p.name,
       category: p.categories && p.categories.length > 0 ? p.categories[0].categoryName : (p.categoryName || p.category || "NATURE"),
       rating: p.ratingValue || p.rating || 4.5,
-      price: p.priceMax ? `Rp ${p.priceMax.toLocaleString('id-ID')}` : (p.estimatedPrice ? `Rp ${p.estimatedPrice.toLocaleString('id-ID')}` : (p.price || "Free")),
-      img: processedImg || p.coverImage || p.img || "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=500&auto=format&fit=crop&q=60",
+      price: (() => {
+        if (p.priceMin != null && p.priceMax != null) {
+          if (p.priceMin === p.priceMax) {
+            return p.priceMin === 0 ? "Gratis" : `Rp ${p.priceMin.toLocaleString('id-ID')}`;
+          }
+          return `Rp ${p.priceMin.toLocaleString('id-ID')} - ${p.priceMax.toLocaleString('id-ID')}`;
+        }
+        if (p.priceMin != null) {
+          return p.priceMin === 0 ? "Gratis" : `Mulai Rp ${p.priceMin.toLocaleString('id-ID')}`;
+        }
+        if (p.priceMax != null) {
+          return p.priceMax === 0 ? "Gratis" : `Hingga Rp ${p.priceMax.toLocaleString('id-ID')}`;
+        }
+        if (p.estimatedPrice != null) {
+          return p.estimatedPrice === 0 ? "Gratis" : `Rp ${p.estimatedPrice.toLocaleString('id-ID')}`;
+        }
+        if (typeof p.price === 'number') {
+           return p.price === 0 ? "Gratis" : `Rp ${p.price.toLocaleString('id-ID')}`;
+        }
+        return p.price || "Gratis";
+      })(),
+      img: processedImg || p.coverImage || p.img || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80",
       desc: p.shortDescription || p.description || p.desc || "Tempat wisata menarik untuk dikunjungi.",
       address: p.address || "Indonesia",
       hours: p.operationalHours ? { weekday: p.operationalHours, weekend: p.operationalHours } : (p.hours || { weekday: "08:00 - 17:00", weekend: "08:00 - 18:00" }),
@@ -283,7 +303,7 @@ export default function RecommendationsList() {
               className="bg-bg-surface border border-border-default rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col"
             >
               <div className="relative h-48 overflow-hidden">
-                <img src={place.img} alt={place.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=500&auto=format&fit=crop&q=60"; }} />
+                <img src={place.img} alt={place.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80"; }} />
                 <span className="absolute top-3 left-3 bg-brand-primary text-text-light text-[10px] font-bold px-2.5 py-1 rounded-sm tracking-wider">
                   {place.category}
                 </span>
@@ -367,7 +387,7 @@ export default function RecommendationsList() {
               </button>
               
               <div className="md:w-1/2 h-64 md:h-auto">
-                <img src={selectedPlace.img} alt={selectedPlace.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=500&auto=format&fit=crop&q=60"; }} />
+                <img src={selectedPlace.img} alt={selectedPlace.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80"; }} />
               </div>
               
               <div className="md:w-1/2 p-6 md:p-8 flex flex-col max-h-[80vh] overflow-y-auto">

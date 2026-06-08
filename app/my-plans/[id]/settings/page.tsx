@@ -233,6 +233,7 @@ export default function SettingsPage() {
     try {
       setIsSaving(true);
       await deleteItinerary(id as string);
+      notification.success("Rencana perjalanan berhasil dihapus!");
       router.push("/my-plans");
     } catch (e: any) {
       notification.error(e.message || "Gagal menghapus rencana");
