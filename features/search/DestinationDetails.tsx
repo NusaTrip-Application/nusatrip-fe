@@ -80,6 +80,12 @@ const DEFAULT_COMMUNITY_INSPIRATIONS: CommunityTrip[] = [
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&auto=format&fit=crop&q=80";
 
+const getImageUrl = (url: string | null | undefined, fallback: string) => {
+  if (!url) return fallback;
+  if (url.startsWith('http')) return url;
+  return `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${url}`;
+};
+
 export default function DestinationDetails({
   destinationSlug,
 }: {
@@ -175,7 +181,7 @@ export default function DestinationDetails({
       <div
         className="relative w-full h-[320px] md:h-[420px] bg-cover bg-center flex flex-col justify-end"
         style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7)), url(${locationData.imageUrl || FALLBACK_IMAGE})`,
+          backgroundImage: `linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7)), url(${getImageUrl(locationData.imageUrl, FALLBACK_IMAGE)})`,
         }}
       >
         <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 pb-8 md:pb-12 text-white">
@@ -247,7 +253,7 @@ export default function DestinationDetails({
                   >
                     <div className="relative aspect-[4/3] w-full overflow-hidden shrink-0">
                       <img
-                        src={place.image || FALLBACK_IMAGE}
+                        src={getImageUrl(place.image, FALLBACK_IMAGE)}
                         alt={place.placeName}
                         className="w-full h-full object-cover"
                         loading="lazy"
