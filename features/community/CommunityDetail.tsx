@@ -1,4 +1,5 @@
 "use client";
+import { notification } from "@/lib/notification";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -51,11 +52,13 @@ const getDaysArray = (startStr: string, endStr: string) => {
 
 const formatDateLabel = (dateObj: Date) => {
   const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+  if (isNaN(dateObj.getTime())) return "Invalid";
   return `${dateObj.getDate()} ${months[dateObj.getMonth()]}`;
 };
 
 const formatDateRelative = (dateStr: string) => {
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "Waktu tidak diketahui";
   return date.toLocaleDateString("id-ID", {
     year: "numeric",
     month: "long",
@@ -66,6 +69,7 @@ const formatDateRelative = (dateStr: string) => {
 const calculateDuration = (start: string, end: string) => {
   const diffTime = Math.abs(new Date(end).getTime() - new Date(start).getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  if (isNaN(diffDays)) return "Durasi tidak diketahui";
   return `${diffDays} Hari`;
 };
 
@@ -178,8 +182,10 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
             setOthersByAuthor(othersRes.data.items || []);
             
             // Check if current itinerary is saved
-            const isItinSaved = savedRes.success && savedRes.data?.items?.some(
-              (item: any) => item.itineraryId === itineraryId
+            const savedList = savedRes.data?.items || savedRes.data || [];
+            const isItinSaved = savedList.some(
+              (item: any) =>
+                (item.itinerary?.itineraryId || item.itineraryId || item.id) === itineraryId
             );
             setIsSaved(!!isItinSaved);
           }
@@ -214,18 +220,24 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
 
   const handleSave = () => {
     requireAuth(async () => {
+      // Guard: jika sudah tersimpan, jangan panggil API toggle
+      if (isSaved) {
+        notification.info("Itinerary ini sudah ada di referensi tersimpan Anda.");
+        return;
+      }
+
       try {
         setIsSaving(true);
         await toggleSaveItinerary(itineraryId);
         setIsSaved(true);
         setSummary((prev: any) => ({ ...prev, totalSaves: (prev.totalSaves || 0) + 1 }));
-        alert("Itinerary berhasil disimpan ke referensi!");
+        notification.success("Itinerary berhasil disimpan ke referensi!");
       } catch (err: any) {
         if (err.message && err.message.includes("already saved")) {
-          alert("Itinerary sudah disimpan di referensi.");
+          notification.error("Itinerary sudah disimpan di referensi.");
           setIsSaved(true);
         } else {
-          alert(err.message || "Gagal menyimpan itinerary.");
+          notification.error(err.message || "Gagal menyimpan itinerary.");
         }
       } finally {
         setIsSaving(false);
@@ -238,10 +250,10 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
       try {
         setIsDuplicating(true);
         await duplicateItinerary(itineraryId);
-        alert("Itinerary berhasil diduplikat ke rencana Anda!");
+        notification.success("Itinerary berhasil diduplikat ke rencana Anda!");
         router.push("/my-plans");
       } catch (err: any) {
-        alert(err.message || "Gagal menduplikat itinerary.");
+        notification.error(err.message || "Gagal menduplikat itinerary.");
       } finally {
         setIsDuplicating(false);
       }
@@ -251,7 +263,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
   const handleSubmitReview = () => {
     requireAuth(async () => {
       if (reviewRating === 0) {
-        alert("Silakan pilih rating bintang terlebih dahulu.");
+        notification.error("Silakan pilih rating bintang terlebih dahulu.");
         return;
       }
       try {
@@ -260,7 +272,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
           rating: reviewRating,
           comment: reviewText.trim() || undefined,
         });
-        alert("Ulasan Anda berhasil dikirim!");
+        notification.success("Ulasan Anda berhasil dikirim!");
         setIsReviewModalOpen(false);
         setReviewRating(0);
         setReviewText("");
@@ -269,7 +281,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
         const summaryRes = await getCommunitySummary(itineraryId);
         setSummary(summaryRes.data);
       } catch (err: any) {
-        alert(err.message || "Gagal mengirimkan ulasan.");
+        notification.error(err.message || "Gagal mengirimkan ulasan.");
       } finally {
         setIsSubmittingReview(false);
       }
@@ -325,10 +337,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
   const activeDateObj = daysArray[activeDay];
   let timelineItems: any[] = [];
   if (activeDateObj && itinerary?.itineraryItemsByDay) {
-    const year = activeDateObj.getFullYear();
-    const month = String(activeDateObj.getMonth() + 1).padStart(2, '0');
-    const day = String(activeDateObj.getDate()).padStart(2, '0');
-    const activeDateKey = `${year}-${month}-${day}`;
+    const activeDateKey = !isNaN(activeDateObj.getTime()) ? activeDateObj.toISOString().slice(0, 10) : "";
     timelineItems = itinerary.itineraryItemsByDay[activeDateKey] || [];
   }
 
@@ -464,16 +473,14 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
           <div className="bg-bg-surface border border-border-default rounded-2xl p-6 mb-6 shadow-sm">
             <h3 className="text-lg font-bold text-text-heading mb-4">Tindakan Cepat</h3>
             <button 
-              disabled={isDuplicating}
               onClick={handleDuplicate}
-              className="w-full bg-[#2563EB] hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-[14px] py-3 px-4 rounded-xl flex items-center justify-center gap-2 mb-3 transition-colors shadow-sm cursor-pointer"
+              className="w-full bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-[14px] py-3 px-4 rounded-xl flex items-center justify-center gap-2 mb-3 transition-colors shadow-sm"
             >
               <Copy size={18} /> {isDuplicating ? "Menduplikat..." : "Duplikat ke Rencana Saya"}
             </button>
             <button 
-              disabled={isSaved || isSaving}
               onClick={handleSave}
-              className="w-full border-2 border-[#2563EB] text-[#2563EB] hover:bg-[#2563EB]/5 disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent font-bold text-[14px] py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 mb-4 transition-colors cursor-pointer"
+              className="w-full border-2 border-[#2563EB] text-[#2563EB] hover:bg-[#2563EB]/5 font-bold text-[14px] py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 mb-4 transition-colors"
             >
               <Bookmark size={18} /> {isSaved ? "Tersimpan di Referensi" : isSaving ? "Menyimpan..." : "Simpan ke Referensi"}
             </button>
@@ -540,7 +547,7 @@ export default function CommunityDetail({ itineraryId }: CommunityDetailProps) {
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={i < Math.round(summary.averageRating) ? "fill-current" : "text-text-muted"}
+                    className={i < Math.round(summary.averageRating || 0) ? "fill-current" : "text-text-muted"}
                     size={16}
                   />
                 ))}

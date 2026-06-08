@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { notification } from "@/lib/notification";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Calendar, Users, MapPin, Plus, Map, Settings, MoreVertical, Star, X, Edit2, Trash2, AlertTriangle, Loader2, ChevronLeft } from "lucide-react";
@@ -122,18 +123,26 @@ export default function ManageTripPage() {
       } else if (data.items || data.itineraryItems) {
         items = data.items || data.itineraryItems || [];
       }
-      const parsedItems = items.map((item: any) => ({
-        id: item.itineraryItemId || item.id,
-        time: item.visitTime || item.time,
-        date: item.visitDate ? new Date(item.visitDate).toISOString().split('T')[0] : item.date,
-        title: item.place?.placeName || item.place?.name || item.title || "Unknown Place",
-        subtitle: item.place?.address || item.subtitle || "",
-        category: item.place?.categories?.[0]?.categoryName || item.category || "General",
-        rating: item.place?.ratingValue || item.rating || 4.5,
-        img: item.place?.image?.imageUrl || item.place?.coverImage || item.img || "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=500&auto=format&fit=crop&q=60",
-        notes: item.notes || "",
-        price: item.place?.priceMax || item.price || 0
-      }));
+      const parsedItems = items.map((item: any) => {
+        const rawImg = typeof item.place?.image === 'string' ? item.place?.image : (item.place?.image?.imageUrl || item.place?.coverImage || item.img);
+        const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev';
+        const processedImg = rawImg 
+          ? (rawImg.startsWith('http') ? rawImg : `${storageUrl}/${rawImg}`) 
+          : "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=500&auto=format&fit=crop&q=60";
+          
+        return {
+          id: item.itineraryItemId || item.id,
+          time: item.visitTime || item.time,
+          date: item.visitDate ? new Date(item.visitDate).toISOString().split('T')[0] : item.date,
+          title: item.place?.placeName || item.place?.name || item.title || "Unknown Place",
+          subtitle: item.place?.address || item.subtitle || "",
+          category: item.place?.categories?.[0]?.categoryName || item.category || "General",
+          rating: item.place?.ratingValue || item.rating || 4.5,
+          img: processedImg,
+          notes: item.notes || "",
+          price: item.place?.priceMax || item.price || 0
+        };
+      });
 
       parsedItems.sort((a: any, b: any) => a.time.localeCompare(b.time));
       setTimelineData(parsedItems);
@@ -169,8 +178,9 @@ export default function ManageTripPage() {
       await deleteItineraryItem(id as string, itemToDelete.id);
       await fetchItinerary();
       setItemToDelete(null);
+      notification.success("Jadwal berhasil dihapus!");
     } catch (e: any) {
-      alert(e.message || "Gagal menghapus item");
+      notification.error(e.message || "Gagal menghapus item");
     } finally {
       setIsSaving(false);
     }
@@ -194,8 +204,9 @@ export default function ManageTripPage() {
       });
       await fetchItinerary();
       setItemToEdit(null);
+      notification.success("Perubahan jadwal berhasil disimpan!");
     } catch (e: any) {
-      alert(e.message || "Gagal menyimpan perubahan");
+      notification.error(e.message || "Gagal menyimpan perubahan");
     } finally {
       setIsSaving(false);
     }
@@ -208,8 +219,9 @@ export default function ManageTripPage() {
       await updateItineraryBudget(id as string, newBudget);
       await fetchItinerary();
       setIsEditingBudget(false);
+      notification.success("Budget berhasil diperbarui!");
     } catch (e: any) {
-      alert(e.message || "Gagal menyimpan budget");
+      notification.error(e.message || "Gagal menyimpan budget");
     } finally {
       setIsSaving(false);
     }
@@ -505,7 +517,7 @@ function TimelineItem({ data, isLast, onEdit, onDelete }: { data: any; isLast: b
         </div>
 
         <div className="relative h-40 md:h-48 w-full rounded-2xl overflow-hidden mb-3 shadow-sm group cursor-pointer">
-          <img src={data.img} alt={data.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+          <img src={data.img} alt={data.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=500&auto=format&fit=crop&q=60"; }} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
           <div className="absolute top-4 left-4 bg-brand-primary text-white text-[10px] font-bold px-2.5 py-1 rounded-sm tracking-wider">{data.category}</div>
           <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">

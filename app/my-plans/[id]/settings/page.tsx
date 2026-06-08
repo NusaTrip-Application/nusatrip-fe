@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { notification } from "@/lib/notification";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Calendar, Users, MapPin, Map, Settings, UploadCloud, Info, Trash2, ChevronLeft, Loader2 } from "lucide-react";
@@ -109,7 +110,7 @@ export default function SettingsPage() {
       };
       reader.readAsDataURL(file);
     } else {
-      alert("Hanya file JPG dan PNG yang didukung.");
+      notification.error("Hanya file JPG dan PNG yang didukung.");
     }
   };
 
@@ -175,7 +176,7 @@ export default function SettingsPage() {
             }
           }
         } catch (uploadError: any) {
-          alert("Upload Validation Error: " + JSON.stringify(uploadError.response?.data, null, 2));
+          notification.error("Gagal mengunggah foto profil.");
           // Fallback to base64 if S3 fails
           finalBannerUrl = formData.bannerImage;
         }
@@ -185,7 +186,7 @@ export default function SettingsPage() {
       
       console.log("FINAL BANNER URL:", finalBannerUrl);
       if (finalBannerUrl && finalBannerUrl.startsWith('data:image')) {
-        alert("Peringatan: Mengirim gambar base64 karena S3 Upload gagal atau tidak digunakan.");
+        console.warn("Peringatan: Mengirim gambar base64 karena S3 Upload gagal.");
       }
 
       await updateItinerary(id as string, {
@@ -197,10 +198,9 @@ export default function SettingsPage() {
         budgetPreference: Number(cleanedBudget) || undefined,
         ...(finalBannerUrl && { bannerImageUrl: finalBannerUrl })
       });
-      alert("Perubahan berhasil disimpan!");
+      notification.success("Perubahan berhasil disimpan!");
       
-      // Re-fetch to trigger loading screen and update main tripData
-      setIsLoading(true);
+      // Re-fetch to update main tripData
       const res = await getItineraryById(id as string);
       const data = res.data || res;
       
@@ -222,7 +222,7 @@ export default function SettingsPage() {
       
     } catch (e: any) {
       console.error(e);
-      alert(typeof e === 'object' ? JSON.stringify(e, null, 2) : e);
+      notification.error("Terjadi kesalahan yang tidak diketahui.");
     } finally {
       setIsSaving(false);
       setIsLoading(false);
@@ -235,7 +235,7 @@ export default function SettingsPage() {
       await deleteItinerary(id as string);
       router.push("/my-plans");
     } catch (e: any) {
-      alert(e.message || "Gagal menghapus rencana");
+      notification.error(e.message || "Gagal menghapus rencana");
     } finally {
       setIsSaving(false);
       setShowDeleteModal(false);

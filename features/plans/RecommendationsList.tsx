@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { notification } from "@/lib/notification";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, Star, List, LayoutGrid, PlusCircle, X, MapPin, Clock, Globe, Phone } from "lucide-react";
@@ -90,19 +91,27 @@ export default function RecommendationsList() {
   const [notes, setNotes] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
-  const mapPlace = (p: any) => ({
-    id: p.placeId || p.id,
-    name: p.placeName || p.name,
-    category: p.categories && p.categories.length > 0 ? p.categories[0].categoryName : (p.categoryName || p.category || "NATURE"),
-    rating: p.ratingValue || p.rating || 4.5,
-    price: p.priceMax ? `Rp ${p.priceMax.toLocaleString('id-ID')}` : (p.estimatedPrice ? `Rp ${p.estimatedPrice.toLocaleString('id-ID')}` : (p.price || "Free")),
-    img: p.image?.imageUrl || p.coverImage || p.img || "https://images.unsplash.com/photo-1583130190518-e397cff177ce?w=500&auto=format&fit=crop&q=60",
-    desc: p.shortDescription || p.description || p.desc || "Tempat wisata menarik untuk dikunjungi.",
-    address: p.address || "Indonesia",
-    hours: p.operationalHours ? { weekday: p.operationalHours, weekend: p.operationalHours } : (p.hours || { weekday: "08:00 - 17:00", weekend: "08:00 - 18:00" }),
-    website: p.website || "#",
-    phone: p.phoneNumber || p.phone || "-"
-  });
+  const mapPlace = (p: any) => {
+    const rawImg = typeof p.image === 'string' ? p.image : p.image?.imageUrl;
+    const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev';
+    const processedImg = rawImg 
+      ? (rawImg.startsWith('http') ? rawImg : `${storageUrl}/${rawImg}`) 
+      : null;
+
+    return {
+      id: p.placeId || p.id,
+      name: p.placeName || p.name,
+      category: p.categories && p.categories.length > 0 ? p.categories[0].categoryName : (p.categoryName || p.category || "NATURE"),
+      rating: p.ratingValue || p.rating || 4.5,
+      price: p.priceMax ? `Rp ${p.priceMax.toLocaleString('id-ID')}` : (p.estimatedPrice ? `Rp ${p.estimatedPrice.toLocaleString('id-ID')}` : (p.price || "Free")),
+      img: processedImg || p.coverImage || p.img || "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=500&auto=format&fit=crop&q=60",
+      desc: p.shortDescription || p.description || p.desc || "Tempat wisata menarik untuk dikunjungi.",
+      address: p.address || "Indonesia",
+      hours: p.operationalHours ? { weekday: p.operationalHours, weekend: p.operationalHours } : (p.hours || { weekday: "08:00 - 17:00", weekend: "08:00 - 18:00" }),
+      website: p.website || "#",
+      phone: p.phoneNumber || p.phone || "-"
+    };
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -274,7 +283,7 @@ export default function RecommendationsList() {
               className="bg-bg-surface border border-border-default rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col"
             >
               <div className="relative h-48 overflow-hidden">
-                <img src={place.img} alt={place.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                <img src={place.img} alt={place.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=500&auto=format&fit=crop&q=60"; }} />
                 <span className="absolute top-3 left-3 bg-brand-primary text-text-light text-[10px] font-bold px-2.5 py-1 rounded-sm tracking-wider">
                   {place.category}
                 </span>
@@ -358,7 +367,7 @@ export default function RecommendationsList() {
               </button>
               
               <div className="md:w-1/2 h-64 md:h-auto">
-                <img src={selectedPlace.img} alt={selectedPlace.name} className="w-full h-full object-cover" />
+                <img src={selectedPlace.img} alt={selectedPlace.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=500&auto=format&fit=crop&q=60"; }} />
               </div>
               
               <div className="md:w-1/2 p-6 md:p-8 flex flex-col max-h-[80vh] overflow-y-auto">
@@ -513,11 +522,11 @@ export default function RecommendationsList() {
                           visitTime: chosenTime,
                           notes: notes || ""
                         });
-                        alert("Berhasil menambahkan jadwal ke rencana perjalanan!");
+                        notification.success("Berhasil menambahkan jadwal ke rencana perjalanan!");
                         closeModal();
                         router.push(`/my-plans/${tripId}`);
                       } catch (error: any) {
-                        alert(error.message || "Gagal menambahkan jadwal. Pastikan jam tidak bentrok.");
+                        notification.error(error.message || "Gagal menambahkan jadwal. Pastikan jam tidak bentrok.");
                       } finally {
                         setIsAdding(false);
                       }
