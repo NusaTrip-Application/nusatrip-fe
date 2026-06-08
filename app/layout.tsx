@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className={`${plusJakarta.variable} ${dmSerif.variable} min-h-screen flex flex-col antialiased bg-bg-main text-text-body font-sans`}>
+      <body className={`${plusJakarta.variable} ${dmSerif.variable} min-h-screen flex flex-col antialiased bg-bg-main text-text-body font-sans`} suppressHydrationWarning>
         {children}
       </body>
     </html>

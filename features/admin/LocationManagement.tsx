@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { Bell, Settings } from "lucide-react";
 import {
   getAdminLocations,
   getProvinces,
@@ -25,16 +26,11 @@ const LocationIcon = () => (
 );
 
 const BellIcon = () => (
-  <svg className="w-5 h-5 text-text-body" fill="none" viewBox="0 0 20 20">
-    <path d="M2.71833 12.7717L5 6.66667C5 5.34058 5.52678 4.06881 6.46447 3.13113C7.40215 2.19345 8.67392 1.66667 10 1.66667C11.3261 1.66667 12.5979 2.19345 13.5355 3.13113C14.4732 4.06881 15 5.34058 15 6.66667L17.2833 12.7725L3.33333 14.1667Z" stroke="currentColor" strokeWidth="1.67" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
+  <Bell className="w-5 h-5 text-text-body" />
 );
 
 const SettingsIcon = () => (
-  <svg className="w-5 h-5 text-text-body" fill="none" viewBox="0 0 20 20">
-    <path d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z" stroke="currentColor" strokeWidth="1.67" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M10.1833 1.66667H9.81667L8.15 3.33333V3.48333L7.92628 4.3157L6.95833 5.13333H5.29167L3.31667 8.26667L4.91333 8.34167V9.78333L3.44167 11.6583L5.16667 14.9333L6.95833 14.8667L7.92628 15.6843L8.15 16.5167V16.6667L9.81667 18.3333H10.1833L11.85 16.5167V16.6667L12.0737 15.6843L12.6833 15.075L14.8333 14.9333L16.6833 11.725L14.7083 8.34167L13.0417 5.13333L12.0737 4.3157L11.85 3.48333V3.33333Z" stroke="currentColor" strokeWidth="1.67" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
+  <Settings className="w-5 h-5 text-text-body" />
 );
 
 const SearchIcon = () => (

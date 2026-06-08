@@ -134,4 +134,108 @@ export async function deleteItineraryItem(itineraryId: string, itemId: string) {
   } catch (error: any) {
     throw error.response?.data || error.message;
   }
+}
+
+// ─── Admin Itinerary Types ──────────────────────────────────────────────────────
+
+export type VisibilityStatus = 'PUBLISHED' | 'PRIVATE' | 'HIDDEN';
+
+export interface AdminItinerary {
+  itineraryId: string;
+  userId: string;
+  locationId: string;
+  title: string;
+  description: string | null;
+  bannerImageUrl: string | null;
+  startDate: string;
+  endDate: string;
+  travelerCount: number;
+  budgetPreference: number | null;
+  visibilityStatus: VisibilityStatus;
+  estimatedTotalBudget: number | null;
+  createdAt: string;
+  updatedAt: string;
+  location: {
+    locationId: string;
+    locationName: string;
+    province: {
+      provinceId: string;
+      provinceName: string;
+    };
+  };
+  user: {
+    userId: string;
+    fullName: string;
+    email: string;
+    photoUrl: string | null;
+  };
+  interestCategories: {
+    categoryId: string;
+    categoryName: string;
+  }[];
+  itemCount: number;
+}
+
+export interface AdminItinerariesMetadata {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface AdminItinerariesResponse {
+  success: boolean;
+  message: string;
+  data: {
+    items: AdminItinerary[];
+    metadata: AdminItinerariesMetadata;
+  };
+}
+
+export interface ItinerarySummaryResponse {
+  success: boolean;
+  message: string;
+  data: {
+    total: number;
+    totalPublished: number;
+    totalPrivate: number;
+  };
+}
+
+// ─── Admin Itinerary API Functions ─────────────────────────────────────────────
+
+export async function getAdminItineraries(params?: {
+  search?: string;
+  status?: VisibilityStatus;
+  locationId?: string;
+  sortBy?: string;
+  page?: number;
+  limit?: number;
+}): Promise<AdminItinerariesResponse> {
+  try {
+    const response = await api.get('/admin/itineraries', { params });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function getAdminItinerarySummary(): Promise<ItinerarySummaryResponse> {
+  try {
+    const response = await api.get('/admin/itineraries/summary');
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function adminDeleteItinerary(itineraryId: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await api.delete(`/itineraries/${itineraryId}`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
 }

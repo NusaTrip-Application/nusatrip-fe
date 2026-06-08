@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Bell, Settings } from "lucide-react";
 import {
   getAdminPlaces,
   getPlacesSummary,
@@ -163,7 +164,7 @@ function TableRowSkeleton() {
 
 interface ModalState {
   open: boolean;
-  mode?: "create" | "edit" | "view";
+  mode?: "create" | "edit" | "view" | "delete";
   place?: AdminPlace | null;
 }
 
@@ -180,7 +181,7 @@ function PlaceFormModal({ mode, place, locations, categories, onClose, onSuccess
   const [form, setForm] = useState({
     placeName: place?.placeName ?? "",
     locationId: place?.locationId ?? "",
-    categories: place?.categories.map(c => c.categoryId) ?? [],
+    categories: place?.categories?.map(c => c.categoryId) ?? [],
     shortDescription: place?.shortDescription ?? "",
     address: place?.address ?? "",
     priceMin: place?.priceMin ?? "",
@@ -369,12 +370,42 @@ function PlaceFormModal({ mode, place, locations, categories, onClose, onSuccess
 
               <div>
                 <label className="block text-sm font-bold text-text-heading mb-2">Kategori <span className="text-error">*</span></label>
-                <div className="relative">
-                  <select required value={form.categories[0] || ""} onChange={e => setForm(f => ({ ...f, categories: [e.target.value] }))} className="w-full border border-border-default rounded-xl px-4 py-3.5 pr-10 text-sm text-text-muted focus:ring-2 focus:ring-brand-primary/30 outline-none bg-bg-surface appearance-none">
+                <div className="relative mb-2">
+                  <select 
+                    value="" 
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val && !form.categories.includes(val)) {
+                        setForm(f => ({ ...f, categories: [...f.categories, val] }));
+                      }
+                    }} 
+                    className="w-full border border-border-default rounded-xl px-4 py-3.5 pr-10 text-sm text-text-muted focus:ring-2 focus:ring-brand-primary/30 outline-none bg-bg-surface appearance-none"
+                  >
                     <option value="" disabled>Pilih kategori tempat</option>
-                    {categories.map(cat => <option key={cat.categoryId} value={cat.categoryId}>{cat.categoryName}</option>)}
+                    {categories.map(cat => (
+                      <option key={cat.categoryId} value={cat.categoryId} disabled={form.categories.includes(cat.categoryId)}>
+                        {cat.categoryName}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDownIcon />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {form.categories.map((id) => {
+                    const catName = categories.find((c) => c.categoryId === id)?.categoryName || id;
+                    return (
+                      <span key={id} className="inline-flex items-center gap-1.5 bg-brand-primary/10 text-brand-primary text-xs font-semibold px-3 py-1.5 rounded-full">
+                        {catName}
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, categories: f.categories.filter((cid) => cid !== id) }))}
+                          className="hover:text-brand-primary-hover focus:outline-none"
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -718,10 +749,85 @@ const STORAGE_URL = process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3
 const getImageUrl = (urlOrKey?: string | any | null) => {
   if (!urlOrKey) return FALLBACK_IMAGE;
   const url = typeof urlOrKey === 'string' ? urlOrKey : urlOrKey.imageUrl;
-  if (!url) return FALLBACK_IMAGE;
+  if (!url || typeof url !== 'string') return FALLBACK_IMAGE;
   if (url.startsWith('http')) return url;
   return `${STORAGE_URL}/${url}`;
 };
+
+// ─── Delete Confirm Modal ────────────────────────────────────────────────────────
+
+function DeleteModal({
+  place,
+  onClose,
+  onSuccess,
+}: {
+  place: AdminPlace;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await deletePlace(place.placeId);
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err?.message || "Gagal menghapus tempat wisata.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-bg-surface rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <div className="flex flex-col items-center text-center gap-3 mb-6">
+          <div className="w-14 h-14 rounded-full bg-error/10 flex items-center justify-center text-error">
+            <TrashIcon />
+          </div>
+          <h3 className="font-serif text-xl text-text-heading">Hapus Tempat?</h3>
+          <p className="text-sm text-text-body">
+            Apakah kamu yakin ingin menghapus tempat wisata{" "}
+            <span className="font-bold text-text-heading">&quot;{place.placeName}&quot;</span>?
+            Tindakan ini tidak dapat dibatalkan.
+          </p>
+        </div>
+
+        {error && (
+          <div className="bg-error/10 border border-error/20 rounded-xl px-4 py-3 text-sm text-error mb-4">
+            {error}
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 px-4 rounded-xl border border-border-default text-sm font-semibold text-text-body hover:bg-bg-hover transition-colors"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={loading}
+            className="flex-1 py-3 px-4 rounded-xl bg-error hover:opacity-90 text-white text-sm font-bold transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {loading && (
+              <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            )}
+            Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 export default function PlaceManagement() {
   const [places, setPlaces] = useState<AdminPlace[]>([]);
@@ -811,15 +917,8 @@ export default function PlaceManagement() {
     setSearch(searchInput.trim());
   };
 
-  const handleDelete = async (placeId: string) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus tempat wisata ini?")) return;
-    try {
-      await deletePlace(placeId);
-      fetchPlaces();
-    } catch (err) {
-      console.error(err);
-      alert("Gagal menghapus tempat");
-    }
+  const handleDelete = (place: AdminPlace) => {
+    setModal({ open: true, mode: "delete", place });
   };
 
   const handleOpenModal = async (mode: "view" | "edit", place: AdminPlace) => {
@@ -880,16 +979,11 @@ export default function PlaceManagement() {
         <div className="flex items-center gap-5">
            {/* Notification & settings mock */}
            <button className="p-2 rounded-full hover:bg-bg-hover relative">
-              <svg className="w-5 h-5 text-text-body" fill="none" viewBox="0 0 20 20">
-                  <path d="M2.71833 12.7717L5 6.66667C5 5.34058 5.52678 4.06881 6.46447 3.13113C7.40215 2.19345 8.67392 1.66667 10 1.66667C11.3261 1.66667 12.5979 2.19345 13.5355 3.13113C14.4732 4.06881 15 5.34058 15 6.66667L17.2833 12.7725L3.33333 14.1667Z" stroke="currentColor" strokeWidth="1.67" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <Bell className="w-5 h-5 text-text-body" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
           </button>
           <button className="p-2 rounded-full hover:bg-bg-hover">
-              <svg className="w-5 h-5 text-text-body" fill="none" viewBox="0 0 20 20">
-                  <path d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z" stroke="currentColor" strokeWidth="1.67" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M10.1833 1.66667H9.81667L8.15 3.33333V3.48333L7.92628 4.3157L6.95833 5.13333H5.29167L3.31667 8.26667L4.91333 8.34167V9.78333L3.44167 11.6583L5.16667 14.9333L6.95833 14.8667L7.92628 15.6843L8.15 16.5167V16.6667L9.81667 18.3333H10.1833L11.85 16.5167V16.6667L12.0737 15.6843L12.6833 15.075L14.8333 14.9333L16.6833 11.725L14.7083 8.34167L13.0417 5.13333L12.0737 4.3157L11.85 3.48333V3.33333Z" stroke="currentColor" strokeWidth="1.67" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <Settings className="w-5 h-5 text-text-body" />
           </button>
           <div className="w-10 h-10 rounded-full bg-border-default overflow-hidden">
               <img src="https://i.pravatar.cc/80?img=12" alt="Admin" className="w-full h-full object-cover" />
@@ -1086,7 +1180,7 @@ export default function PlaceManagement() {
                       <button onClick={() => handleOpenModal("edit", place)} className="p-2 rounded hover:bg-brand-primary/10 text-brand-primary transition-colors">
                         <EditIcon />
                       </button>
-                      <button onClick={() => handleDelete(place.placeId)} className="p-2 rounded hover:bg-error/10 text-error transition-colors">
+                      <button onClick={() => handleDelete(place)} className="p-2 rounded hover:bg-error/10 text-error transition-colors">
                         <TrashIcon />
                       </button>
                     </div>
@@ -1128,7 +1222,7 @@ export default function PlaceManagement() {
 
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
+                  disabled={page >= totalPages || totalPages === 0}
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:bg-bg-hover disabled:opacity-30 disabled:cursor-not-allowed transition"
                 >
                   <svg className="w-2 h-3" fill="currentColor" viewBox="0 0 8 12"><path d="M0.6 10.6L2 12L8 6L2 0L0.6 1.4L5.2 6L0.6 10.6Z"/></svg>
@@ -1139,12 +1233,20 @@ export default function PlaceManagement() {
         </div>
       </div>
 
-      {modal.open && (
+      {modal.open && (modal.mode === "create" || modal.mode === "edit" || modal.mode === "view") && (
         <PlaceModal
-          mode={modal.mode!}
+          mode={modal.mode as "create" | "edit" | "view"}
           place={modal.place}
           locations={locations}
           categories={categories}
+          onClose={() => setModal({ open: false })}
+          onSuccess={fetchPlaces}
+        />
+      )}
+
+      {modal.open && modal.mode === "delete" && modal.place && (
+        <DeleteModal
+          place={modal.place}
           onClose={() => setModal({ open: false })}
           onSuccess={fetchPlaces}
         />
