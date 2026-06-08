@@ -136,8 +136,6 @@ export async function deleteItineraryItem(itineraryId: string, itemId: string) {
   }
 }
 
-// ─── Saved Itineraries ────────────────────────────────────────────────────────
-
 export async function getSavedItineraries(params?: { page?: number; limit?: number }) {
   try {
     const response = await api.get('/itineraries/saved', { params });
@@ -150,6 +148,33 @@ export async function getSavedItineraries(params?: { page?: number; limit?: numb
 export async function toggleSaveItinerary(itineraryId: string) {
   try {
     const response = await api.post(`/itineraries/${itineraryId}/save`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function getCommunitySummary(itineraryId: string) {
+  try {
+    const response = await api.get(`/itineraries/community/${itineraryId}/summary`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function getOtherAuthorItineraries(itineraryId: string) {
+  try {
+    const response = await api.get(`/itineraries/community/${itineraryId}/author-others`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function duplicateItinerary(itineraryId: string) {
+  try {
+    const response = await api.post(`/itineraries/${itineraryId}/duplicate`);
     return response.data;
   } catch (error: any) {
     throw error.response?.data || error.message;
