@@ -53,7 +53,7 @@ export default function PopularDestinations() {
           Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="min-w-[220px] md:min-w-[260px] flex-none snap-start bg-bg-surface rounded-lg overflow-hidden border border-border-default shadow-sm animate-pulse flex flex-col"
+              className="w-[220px] md:w-[260px] shrink-0 snap-start bg-bg-surface rounded-lg overflow-hidden border border-border-default shadow-sm animate-pulse flex flex-col"
             >
               <div className="w-full h-40 md:h-48 bg-bg-soft-gray shrink-0" />
               <div className="p-5 space-y-2 flex-grow">
@@ -71,7 +71,7 @@ export default function PopularDestinations() {
             <Link
               key={dest.locationId}
               href={`/search/${dest.locationId}`}
-              className="min-w-[220px] md:min-w-[260px] flex-none snap-start bg-bg-surface rounded-lg overflow-hidden border border-border-default shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer flex flex-col"
+              className="w-[220px] md:w-[260px] shrink-0 snap-start bg-bg-surface rounded-lg overflow-hidden border border-border-default shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer flex flex-col"
             >
               <div className="overflow-hidden h-40 md:h-48 w-full shrink-0">
                 <img
@@ -85,10 +85,10 @@ export default function PopularDestinations() {
               </div>
               <div className="p-5 flex-grow flex flex-col justify-between">
                 <div>
-                  <h3 className="text-[20px] font-semibold leading-[1.4] -tracking-[0.01em] text-text-heading mb-1">
+                  <h3 className="text-[20px] font-semibold leading-[1.4] -tracking-[0.01em] text-text-heading mb-1 line-clamp-1" title={dest.locationName}>
                     {dest.locationName}
                   </h3>
-                  <p className="text-[14px] font-medium leading-[1.5] text-text-body flex items-center gap-1.5">
+                  <p className="text-[14px] font-medium leading-[1.5] text-text-body flex items-center gap-1.5 line-clamp-1" title={dest.province.provinceName}>
                     <MapPin size={16} className="text-text-muted" />
                     {dest.province.provinceName}
                   </p>

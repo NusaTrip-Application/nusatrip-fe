@@ -199,9 +199,6 @@ useEffect(() => {
   return (
     <header className="flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-bg-surface border-b border-border-default sticky top-0 z-50">
       <div className="flex items-center gap-3">
-        <button className="lg:hidden text-text-body hover:text-text-heading transition-colors">
-          <Menu size={24} />
-        </button>
         <Link href="/" className="flex items-center gap-1.5 md:gap-2">
           <MapPin className="text-brand-primary md:w-7 md:h-7" size={24} />
           <span className="text-lg md:text-2xl font-bold text-text-heading tracking-tight">

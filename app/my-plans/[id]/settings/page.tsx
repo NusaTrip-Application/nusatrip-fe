@@ -290,7 +290,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <main className="max-w-[1200px] mx-auto px-4 md:px-8 mt-8 mb-16">
+        <main className="max-w-[1200px] mx-auto px-4 md:px-8 mt-8 mb-28 md:mb-16">
           <div className="flex flex-col md:flex-row gap-8">
 
             <div className="w-full md:w-64 shrink-0 flex flex-col gap-6">

@@ -101,7 +101,7 @@ export default function RecommendationsList() {
     return {
       id: p.placeId || p.id,
       name: p.placeName || p.name,
-      category: p.categories && p.categories.length > 0 ? p.categories[0].categoryName : (p.categoryName || p.category || "NATURE"),
+      categories: p.categories?.map((c: any) => c.categoryName) || (p.categoryName || p.category ? [p.categoryName || p.category] : ["NATURE"]),
       rating: p.ratingValue || p.rating || 4.5,
       price: (() => {
         if (p.priceMin != null && p.priceMax != null) {
@@ -210,7 +210,7 @@ export default function RecommendationsList() {
 
   const filteredPlaces = places.filter((place) => {
     if (activeFilter === "All Spots") return true;
-    return place.category.toUpperCase() === activeFilter.toUpperCase();
+    return place.categories.some((cat: string) => cat.toUpperCase() === activeFilter.toUpperCase());
   });
 
   const totalPages = Math.ceil(filteredPlaces.length / itemsPerPage);
@@ -304,9 +304,18 @@ export default function RecommendationsList() {
             >
               <div className="relative h-48 overflow-hidden">
                 <img src={place.img} alt={place.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=80"; }} />
-                <span className="absolute top-3 left-3 bg-brand-primary text-text-light text-[10px] font-bold px-2.5 py-1 rounded-sm tracking-wider">
-                  {place.category}
-                </span>
+                <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 max-w-[85%]">
+                  {place.categories.slice(0, 2).map((cat: string, idx: number) => (
+                    <span key={idx} className="bg-brand-primary/95 text-text-light text-[10px] font-bold px-2.5 py-1 rounded-sm tracking-wider shadow-sm">
+                      {cat}
+                    </span>
+                  ))}
+                  {place.categories.length > 2 && (
+                    <span className="bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-sm tracking-wider shadow-sm">
+                      +{place.categories.length - 2}
+                    </span>
+                  )}
+                </div>
               </div>
               
               <div className="p-5 flex flex-col flex-grow">
@@ -393,7 +402,13 @@ export default function RecommendationsList() {
               <div className="md:w-1/2 p-6 md:p-8 flex flex-col max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="text-2xl font-serif font-bold text-text-heading">{selectedPlace.name}</h2>
-                  <span className="bg-brand-primary text-text-light text-[10px] font-bold px-2 py-0.5 rounded-sm">{selectedPlace.category}</span>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {selectedPlace.categories?.map((cat: string, idx: number) => (
+                      <span key={idx} className="bg-brand-primary text-text-light text-[10px] font-bold px-2 py-0.5 rounded-sm">
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 
                 <div className="flex items-center gap-4 text-[13px] font-medium text-text-muted mb-6">

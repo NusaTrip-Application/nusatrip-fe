@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { getLocationById, Location } from "@/services/locations";
 import { getPlaceRecommendations, RecommendedPlace } from "@/services/places";
 import { getCommunityItineraries, getSavedItineraries, toggleSaveItinerary } from "@/services/plans";
+import { notification } from "@/lib/notification";
 
 interface CommunityTrip {
   title: string;
@@ -172,15 +173,22 @@ export default function DestinationDetails({
       router.push("/login");
       return;
     }
+    const isCurrentlySaved = !!savedCommunityItineraries[itineraryId];
+    setSavedCommunityItineraries((prev) => ({ ...prev, [itineraryId]: !isCurrentlySaved }));
     try {
       const res = await toggleSaveItinerary(itineraryId);
       if (res.success) {
-        setSavedCommunityItineraries((prev) => ({
-          ...prev,
-          [itineraryId]: !prev[itineraryId],
-        }));
+        if (!isCurrentlySaved) {
+          notification.success("Itinerary berhasil disimpan.");
+        } else {
+          notification.success("Itinerary dihapus dari simpanan.");
+        }
+      } else {
+        throw new Error("Gagal menyimpan");
       }
     } catch (err) {
+      setSavedCommunityItineraries((prev) => ({ ...prev, [itineraryId]: isCurrentlySaved }));
+      notification.error("Gagal menyimpan perubahan. Silakan coba lagi.");
       console.error("Failed to toggle save itinerary:", err);
     }
   };
@@ -191,10 +199,16 @@ export default function DestinationDetails({
       router.push("/login");
       return;
     }
+    const isAdded = !!addedItineraries[placeId];
     setAddedItineraries((prev) => ({
       ...prev,
-      [placeId]: !prev[placeId],
+      [placeId]: !isAdded,
     }));
+    if (!isAdded) {
+      notification.success("Tempat berhasil ditambahkan ke rencana.");
+    } else {
+      notification.success("Tempat dihapus dari rencana.");
+    }
   };
 
   const handleStartPlanning = () => {
@@ -296,7 +310,7 @@ export default function DestinationDetails({
           </div>
 
           {popularPlaces.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {popularPlaces.map((place) => {
                 const isAdded = addedItineraries[place.placeId];
                 return (
@@ -304,7 +318,7 @@ export default function DestinationDetails({
                     key={place.placeId}
                     className="bg-bg-surface border border-border-default rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col"
                   >
-                    <div className="relative aspect-[4/3] w-full overflow-hidden shrink-0">
+                    <div className="relative h-48 w-full overflow-hidden shrink-0">
                       <img
                         src={getImageUrl(place.image, FALLBACK_IMAGE)}
                         alt={place.placeName}
@@ -312,17 +326,26 @@ export default function DestinationDetails({
                         loading="lazy"
                         onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
                       />
-                      {place.categories?.[0] && (
-                        <span className="absolute top-4.5 left-4.5 bg-brand-primary/85 text-[10px] md:text-[11px] font-bold text-white px-2.5 py-1 rounded-md tracking-wider">
-                          {place.categories[0].categoryName}
-                        </span>
+                      {place.categories && place.categories.length > 0 && (
+                        <div className="absolute top-4 left-4 flex flex-wrap gap-1.5 max-w-[85%]">
+                          {place.categories.slice(0, 2).map((cat: any, idx: number) => (
+                            <span key={idx} className="bg-brand-primary/95 text-white text-[10px] md:text-[11px] font-bold px-2.5 py-1 rounded-md tracking-wider shadow-sm">
+                              {cat.categoryName}
+                            </span>
+                          ))}
+                          {place.categories.length > 2 && (
+                            <span className="bg-black/60 text-white text-[10px] md:text-[11px] font-bold px-2 py-1 rounded-md tracking-wider shadow-sm">
+                              +{place.categories.length - 2}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
 
-                    <div className="p-5 flex flex-col justify-between flex-grow min-h-[200px]">
+                    <div className="p-5 flex flex-col justify-between flex-grow">
                       <div>
                         <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <h3 className="text-lg font-semibold text-text-heading leading-snug">
+                          <h3 className="text-[16px] md:text-lg font-semibold text-text-heading leading-snug line-clamp-1">
                             {place.placeName}
                           </h3>
                           <div className="flex items-center gap-1 text-[13.5px] font-bold text-[#2563EB] shrink-0">
@@ -447,11 +470,19 @@ export default function DestinationDetails({
                         <div className="flex items-center gap-3 mb-2 text-[11px] md:text-[12px] text-text-body">
                           <div className="flex items-center gap-1">
                             <Calendar size={13} className="text-text-muted" />
-                            <span>{trip.durationDays ? `${trip.durationDays} Hari` : "TBD"}</span>
+                            <span>
+                              {trip.startDate && trip.endDate
+                                ? `${Math.ceil((new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) / (1000 * 3600 * 24)) + 1} Hari`
+                                : "TBD"}
+                            </span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Wallet size={13} className="text-text-muted" />
-                            <span>{trip.budgetPreference === 1 ? "Hemat" : trip.budgetPreference === 2 ? "Menengah" : trip.budgetPreference === 3 ? "Mewah" : "TBD"}</span>
+                            <span>
+                              {trip.budgetPreference
+                                ? `Rp ${trip.budgetPreference.toLocaleString("id-ID")}`
+                                : "TBD"}
+                            </span>
                           </div>
                         </div>
 
