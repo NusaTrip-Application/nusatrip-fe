@@ -152,4 +152,32 @@ export async function toggleSaveItinerary(itineraryId: string) {
   } catch (error: any) {
     throw error.response?.data || error.message;
   }
-}
+}
+
+export async function getCommunitySummary(itineraryId: string) {
+  try {
+    const response = await api.get(`/itineraries/community/${itineraryId}/summary`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function getOtherAuthorItineraries(itineraryId: string) {
+  try {
+    const response = await api.get(`/itineraries/community/${itineraryId}/author-others`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+
+export async function duplicateItinerary(itineraryId: string) {
+  try {
+    const response = await api.post(`/itineraries/${itineraryId}/duplicate`);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error.message;
+  }
+}
+

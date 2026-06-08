@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Search, Calendar, Wallet, Star, Bookmark, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { getCommunityItineraries } from "@/services/plans";
+import { getCommunityItineraries, getSavedItineraries, toggleSaveItinerary } from "@/services/plans";
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"Popular" | "Recent">("Popular");
@@ -18,6 +18,26 @@ export default function CommunityPage() {
   const [isLoading, setIsLoading] = useState(true);
   
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchSaved = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const response = await getSavedItineraries({ limit: 100 });
+        if (response.success && response.data.items) {
+          const map: Record<string, boolean> = {};
+          response.data.items.forEach((item: any) => {
+            map[item.itineraryId] = true;
+          });
+          setSavedItems(map);
+        }
+      } catch (error) {
+        console.error("Failed to fetch saved itineraries:", error);
+      }
+    };
+    fetchSaved();
+  }, []);
 
   useEffect(() => {
     const fetchCommunityItineraries = async () => {
@@ -40,13 +60,19 @@ export default function CommunityPage() {
     fetchCommunityItineraries();
   }, [appliedSearchQuery, activeTab]);
 
-  const toggleSave = (id: string) => {
+  const toggleSave = async (id: string) => {
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/login");
       return;
     }
     setSavedItems((prev) => ({ ...prev, [id]: !prev[id] }));
+    try {
+      await toggleSaveItinerary(id);
+    } catch (error) {
+      setSavedItems((prev) => ({ ...prev, [id]: !prev[id] }));
+      console.error("Failed to toggle save:", error);
+    }
   };
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
@@ -157,7 +183,9 @@ export default function CommunityPage() {
             >
               <div className="relative h-48 w-full">
                 <img
-                  src={item.imageUrl || "https://images.unsplash.com/photo-1549880338-65ddcdfd017b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"}
+                  src={item.bannerImageUrl
+                    ? (item.bannerImageUrl.startsWith('http') ? item.bannerImageUrl : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${item.bannerImageUrl}`)
+                    : "https://images.unsplash.com/photo-1549880338-65ddcdfd017b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"}
                   alt={item.title}
                   className="w-full h-full object-cover bg-gray-100"
                 />
@@ -202,23 +230,23 @@ export default function CommunityPage() {
                       className="fill-[var(--color-brand-warm)] text-[var(--color-brand-warm)]"
                     />
                     <span className="font-semibold text-[var(--color-text-heading)]">
-                      {item.rating || "4.5"}
+                      {item.ratingValue || "0"}
                     </span>
                     <span className="text-[var(--color-text-muted)]">
-                      ({item.reviewsCount || 0})
+                      ({item.ratingCount || 0})
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
                     <Bookmark size={16} />
-                    <span>{item.bookmarkCount || 0} saved</span>
+                    <span>{item.savedCount || 0} saved</span>
                   </div>
                 </div>
 
                 <div className="mt-auto border-t border-[var(--color-border-default)] pt-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {item.user?.profilePhotoUrl ? (
+                    {item.user?.photoUrl ? (
                       <img
-                        src={item.user.profilePhotoUrl}
+                        src={item.user.photoUrl.startsWith('http') ? item.user.photoUrl : `${process.env.NEXT_PUBLIC_STORAGE_URL || 'https://pub-22677bc3c0fc46d383a098fbc5cb784e.r2.dev'}/${item.user.photoUrl}`}
                         alt={item.user?.fullName || "User"}
                         className="w-6 h-6 rounded-full object-cover"
                       />
